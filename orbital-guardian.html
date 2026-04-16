@@ -508,6 +508,16 @@
       "Mission control is requesting one clean fist bump and fewer panic flips."
     ];
 
+    const gameOverQuips = [
+      "Houston, we have a problem.",
+      "Flight director note: that landing was mostly interpretive.",
+      "Mission update: the rocket has become one with the abyss.",
+      "Ground control suggests blaming solar weather.",
+      "This timeline did not pass range safety.",
+      "Debrief says that was bold, cinematic, and not repeatable.",
+      "USSF advisory: tactical retreat acknowledged."
+    ];
+
     bestEl.textContent = String(state.best);
 
     const launcher = {
@@ -1057,7 +1067,8 @@
       if (state.balls <= 0 && rockets.length === 0) {
         state.running = false;
         state.canRestart = true;
-        state.message = "Rockets expended. Press Enter to redeploy.";
+        const closingQuip = gameOverQuips[Math.floor(Math.random() * gameOverQuips.length)];
+        state.message = `${closingQuip} Press Enter to redeploy.`;
         if (state.score > state.best) {
           state.best = state.score;
           localStorage.setItem("orbitalGuardianBest", String(state.best));
