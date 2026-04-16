@@ -500,7 +500,16 @@
       avgFrameMs: 16.7,
       lastFrameMs: performance.now(),
       slowFrames: 0,
-      fastFrames: 0
+      fastFrames: 0,
+      boardArtFrame: 0
+    };
+
+    const boardArtCache = {
+      canvas: null,
+      ctx: null,
+      width: 0,
+      height: 0,
+      lastBucket: -1
     };
 
     const rocketRules = {
@@ -2737,7 +2746,7 @@
       ctx.restore();
     }
 
-    function drawBoardArt() {
+    function drawBoardArtStatic() {
       ctx.save();
       ctx.translate(boardArt.centerX, boardArt.centerY);
       ctx.scale(boardArt.scaleX, boardArt.scaleY);
@@ -2759,6 +2768,9 @@
 
       drawMissionPatch();
       drawFieldEasterEggs();
+    }
+
+    function drawBoardDynamicFx() {
       drawLaunchRailFx();
       for (const astronaut of astronauts) {
         drawAstronaut(astronaut);
@@ -2767,8 +2779,31 @@
     }
 
     function render() {
+      if (!boardArtCache.canvas || boardArtCache.width !== board.width || boardArtCache.height !== board.height) {
+        boardArtCache.canvas = document.createElement("canvas");
+        boardArtCache.canvas.width = board.width;
+        boardArtCache.canvas.height = board.height;
+        boardArtCache.ctx = boardArtCache.canvas.getContext("2d");
+        boardArtCache.width = board.width;
+        boardArtCache.height = board.height;
+        boardArtCache.lastBucket = -1;
+      }
+
+      perf.boardArtFrame += 1;
+      const redrawInterval = perf.lowEffects ? 4 : 2;
+      const bucket = Math.floor(perf.boardArtFrame / redrawInterval);
+
       ctx.clearRect(0, 0, board.width, board.height);
-      drawBoardArt();
+      if (boardArtCache.lastBucket !== bucket) {
+        drawBoardArtStatic();
+        boardArtCache.ctx.clearRect(0, 0, board.width, board.height);
+        boardArtCache.ctx.drawImage(canvas, 0, 0);
+        boardArtCache.lastBucket = bucket;
+      } else {
+        ctx.drawImage(boardArtCache.canvas, 0, 0);
+      }
+
+      drawBoardDynamicFx();
       drawWalls();
       drawBumpers();
       drawBeacons();
