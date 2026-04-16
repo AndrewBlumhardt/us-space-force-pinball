@@ -487,20 +487,20 @@
       { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
       { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
       { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
-      { x: 210, y: 390, r: 23, points: 220, pulse: 0, label: "SAT" },
-      { x: 329, y: 390, r: 23, points: 220, pulse: 0, label: "COM" }
+      { x: 220, y: 406, r: 23, points: 220, pulse: 0, label: "SAT" },
+      { x: 319, y: 406, r: 23, points: 220, pulse: 0, label: "COM" }
     ];
 
     const gates = [];
 
     const beacons = [
-      { x: 90, y: 470, r: 16, points: 275, pulse: 0 },
-      { x: 450, y: 470, r: 16, points: 275, pulse: 0 }
+      { x: 164, y: 556, r: 16, points: 275, pulse: 0 },
+      { x: 376, y: 556, r: 16, points: 275, pulse: 0 }
     ];
 
     const slings = [
-      { a: { x: 108, y: 804 }, b: { x: 174, y: 842 }, c: { x: 134, y: 900 }, power: 1.24 },
-      { a: { x: 406, y: 804 }, b: { x: 340, y: 842 }, c: { x: 380, y: 900 }, power: 1.24 }
+      { a: { x: 62, y: 810 }, b: { x: 166, y: 884 }, c: { x: 112, y: 888 }, power: 1.24 },
+      { a: { x: 452, y: 810 }, b: { x: 348, y: 884 }, c: { x: 428, y: 888 }, power: 1.24 }
     ];
 
     const flippers = {
@@ -587,11 +587,11 @@
     ];
 
     const astronauts = [
-      { x: 78, y: 540, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
-      { x: 462, y: 548, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
-      { x: 270, y: 704, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
-      { x: 148, y: 462, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
-      { x: 338, y: 600, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
+      { x: 78, y: 588, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
+      { x: 462, y: 596, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
+      { x: 270, y: 748, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
+      { x: 206, y: 444, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
+      { x: 356, y: 652, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
     ];
 
     const specialCore = {
@@ -624,9 +624,9 @@
     ];
 
     const alienSaucers = [
-      { x: 118, y: 524, homeX: 118, homeY: 524, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0 },
-      { x: 424, y: 522, homeX: 424, homeY: 522, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0 },
-      { x: 270, y: 668, homeX: 270, homeY: 668, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0 }
+      { x: 110, y: 486, homeX: 110, homeY: 486, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0 },
+      { x: 430, y: 484, homeX: 430, homeY: 484, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0 },
+      { x: 270, y: 620, homeX: 270, homeY: 620, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0 }
     ];
 
     const particles = [];
@@ -1920,8 +1920,8 @@
         ctx.stroke();
 
         ctx.fillStyle = "rgba(236, 245, 255, 0.95)";
-        ctx.font = "800 13px Segoe UI";
-        ctx.fillText(bumper.label, bumper.x - ctx.measureText(bumper.label).width / 2, bumper.y + 3);
+        ctx.font = "900 17px Segoe UI";
+        ctx.fillText(bumper.label, bumper.x - ctx.measureText(bumper.label).width / 2, bumper.y + 5);
         ctx.restore();
       }
     }
