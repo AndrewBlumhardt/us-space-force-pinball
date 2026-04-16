@@ -394,6 +394,13 @@
       message: "Hold Space to charge the launch rail for rocket deployment."
     };
 
+    const hudMessage = {
+      shown: state.message,
+      pending: state.message,
+      lastSwapMs: performance.now(),
+      minHoldMs: 1300
+    };
+
     let ball = null;
     let loadedRocket = null;
     const rockets = [];
@@ -2669,7 +2676,15 @@
       bestEl.textContent = String(state.best);
       ballsEl.textContent = String(state.balls);
       multiplierEl.textContent = "x" + state.multiplier.toFixed(1).replace(/\.0$/, "");
-      statusEl.textContent = state.message;
+      const now = performance.now();
+      if (state.message !== hudMessage.pending) {
+        hudMessage.pending = state.message;
+      }
+      if (hudMessage.pending !== hudMessage.shown && now - hudMessage.lastSwapMs >= hudMessage.minHoldMs) {
+        hudMessage.shown = hudMessage.pending;
+        hudMessage.lastSwapMs = now;
+      }
+      statusEl.textContent = hudMessage.shown;
     }
 
     function launchBall() {
