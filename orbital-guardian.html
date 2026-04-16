@@ -2745,11 +2745,11 @@
     canvas.addEventListener("pointerdown", (event) => {
       ensureAudio();
       if (state.introActive) {
-        launchBall();
+        state.message = "Press Space to launch briefing.";
         return;
       }
       if (loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0 && state.running) {
-        state.charging = true;
+        state.message = "Launch is keyboard-only. Hold and release Space.";
         return;
       }
       if (event.offsetX < canvas.width * 0.5) {
@@ -2760,7 +2760,6 @@
     });
 
     canvas.addEventListener("pointerup", () => {
-      launchBall();
       state.leftPressed = false;
       state.rightPressed = false;
       state.charging = false;
