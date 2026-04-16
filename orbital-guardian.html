@@ -331,7 +331,7 @@
       </section>
 
       <section class="notes">
-        <div><b>Targets:</b> NOVA, DELTA, ORBIT, SAT, COM, BOOST.</div>
+        <div><b>Targets:</b> NOVA, DELTA, ORBIT, SAT, COM.</div>
         <div><b>Resupply:</b> first at 12,000 score, then +6,000 harder each time.</div>
       </section>
 
@@ -423,33 +423,34 @@
       minX: 80,
       maxX: 450,
       minY: 360,
-      reinforceLaunchPower: 0.72,
+      maxY: 760
+    };
 
     const perf = {
       maxParticles: 320,
       frameSkip: false,
       particleWriteIndex: 0
     };
-      { x: 365, y: 334, r: 24, points: 240, pulse: 0, label: "COM", theme: "warm", kick: 1.26 },
+
+    const rocketRules = {
       maxConcurrent: 3,
       reinforceDeployDelay: 132,
-      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.78 },
-      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.78 }
-      boostBumperKick: 1.78
+      reinforceLaunchDelay: 18,
+      reinforceLaunchPower: 0.72
     };
 
     const rocketStats = {
       radius: 10
-          ball.vx += 4.8 * dir;
-          ball.vy -= 6.0 * sling.power;
-          spawnBurst(ball.x, ball.y, "255,77,225", 16);
+    };
+
+    const restartState = {
       asteroids: [],
       alienSaucers: []
     };
 
     const quips = [
       "Astronaut on coffee break - try not to boop the helmet.",
-        <div><b>Targets:</b> NOVA, DELTA, ORBIT, SAT, COM.</div>
+      "Neon mode engaged. Sunglasses recommended.",
       "Ground control says this is totally within budget.",
       "Flight deck cat says this is a purr-fect trajectory.",
       "Mission note: less screaming, more rocket precision.",
@@ -525,8 +526,7 @@
       { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA", theme: "cool", kick: 1 },
       { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT", theme: "cool", kick: 1 },
       { x: 174, y: 334, r: 24, points: 240, pulse: 0, label: "SAT", theme: "warm", kick: 1.26 },
-      { x: 365, y: 334, r: 24, points: 240, pulse: 0, label: "COM", theme: "warm", kick: 1.26 },
-      { x: 270, y: 704, r: 29, points: 320, pulse: 0, label: "BOOST", theme: "warm", kick: rocketRules.boostBumperKick }
+      { x: 365, y: 334, r: 24, points: 240, pulse: 0, label: "COM", theme: "warm", kick: 1.26 }
     ];
 
     const gates = [];
@@ -537,8 +537,8 @@
     ];
 
     const slings = [
-      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.5 },
-      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.5 }
+      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.72 },
+      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.72 }
     ];
 
     const flippers = {
@@ -949,12 +949,16 @@
 
       const activeTarget = Math.min(rocketRules.maxConcurrent, state.balls);
       if (loadedRocket && !loadedRocket.launched) {
-        loadedRocket.x = launcher.holdX;
-        loadedRocket.y = launcher.holdY;
-        loadedRocket.prevX = loadedRocket.x;
-        loadedRocket.prevY = loadedRocket.y;
         if (loadedRocket.autoLaunchTimer > 0) {
+          loadedRocket.x = launcher.holdX;
+          loadedRocket.y = launcher.holdY;
+          loadedRocket.prevX = loadedRocket.x;
+          loadedRocket.prevY = loadedRocket.y;
           loadedRocket.autoLaunchTimer -= 1;
+          if (loadedRocket.autoLaunchTimer <= 0) {
+            loadedRocket.autoLaunchTimer = 0;
+            state.message = "Reserve rocket ready - press Space to launch.";
+          }
         }
         return;
       }
@@ -973,8 +977,8 @@
       if (reinforceTimer > 0) {
         reinforceTimer -= 1;
         if (reinforceTimer === 0) {
-          spawnLoadedRocket();
-          state.message = "Reserve rocket ready - press Space to launch.";
+          spawnLoadedRocket(rocketRules.reinforceLaunchDelay, rocketRules.reinforceLaunchPower);
+          state.message = "Reserve rocket rolling into the launch rail.";
         }
       }
     }
