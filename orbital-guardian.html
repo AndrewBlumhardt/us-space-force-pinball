@@ -1348,7 +1348,8 @@
     }
 
     function updateParticles() {
-      for (let i = particles.length - 1; i >= 0; i -= 1) {
+      let i = particles.length - 1;
+      while (i >= 0) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
@@ -1357,8 +1358,11 @@
         p.vy += 0.02;
         p.life -= 1;
         if (p.life <= 0) {
-          particles.splice(i, 1);
+          // Swap-and-pop: O(1) removal, order doesn't matter for particles.
+          particles[i] = particles[particles.length - 1];
+          particles.pop();
         }
+        i -= 1;
       }
     }
 
@@ -1483,37 +1487,68 @@
       ctx.restore();
     }
 
-    function drawNeonGrid() {
-      ctx.save();
-      ctx.translate(270, 935);
-      const pulse = 0.4 + Math.sin(state.neonTick) * 0.2;
-      ctx.strokeStyle = `rgba(141, 108, 255, ${0.24 + pulse * 0.3})`;
-      ctx.lineWidth = 1;
+    // Offscreen canvas cache for the neon grid - redrawn only when pulse changes bucket.
+    const gridCache = { canvas: null, lastBucket: -1 };
+    function getGridCanvas(pulse) {
+      const bucket = Math.round(pulse * 20);
+      if (gridCache.canvas && gridCache.lastBucket === bucket) {
+        return gridCache.canvas;
+      }
+      if (!gridCache.canvas) {
+        gridCache.canvas = document.createElement("canvas");
+        gridCache.canvas.width = 620;
+        gridCache.canvas.height = 240;
+      }
+      const gc = gridCache.canvas.getContext("2d");
+      gc.clearRect(0, 0, 620, 240);
+      gc.strokeStyle = `rgba(141, 108, 255, ${0.24 + pulse * 0.3})`;
+      gc.lineWidth = 1;
+      // Translate origin to (310, 240) = center-bottom of the offscreen canvas.
       for (let i = -300; i <= 300; i += 24) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i * 0.45, -220);
-        ctx.stroke();
+        gc.beginPath();
+        gc.moveTo(310 + i, 240);
+        gc.lineTo(310 + i * 0.45, 20);
+        gc.stroke();
       }
       for (let y = 0; y <= 220; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(-300 + y * 0.7, -y);
-        ctx.lineTo(300 - y * 0.7, -y);
-        ctx.stroke();
+        gc.beginPath();
+        gc.moveTo(310 - 300 + y * 0.7, 240 - y);
+        gc.lineTo(310 + 300 - y * 0.7, 240 - y);
+        gc.stroke();
       }
-      ctx.restore();
+      gridCache.lastBucket = bucket;
+      return gridCache.canvas;
     }
 
+    function drawNeonGrid() {
+      const pulse = 0.4 + Math.sin(state.neonTick) * 0.2;
+      const gc = getGridCanvas(pulse);
+      // Draw cached canvas: grid origin maps to canvas point (270, 935).
+      ctx.drawImage(gc, 270 - 310, 935 - 240);
+    }
+
+    // Offscreen canvas cache for the star field - redrawn every 4 frames.
+    const starCache = { canvas: null, tick: 0, lastDraw: -1 };
     function drawStarField() {
-      ctx.save();
-      ctx.fillStyle = "rgba(161, 220, 255, 0.2)";
       const time = performance.now() * 0.02;
-      for (let i = 0; i < 26; i += 1) {
-        const x = ((i * 83) + time) % 460 + 36;
-        const y = (i * 59) % 720 + 54;
-        ctx.fillRect(x, y, 2, 2);
+      const bucket = Math.floor(time / 4);
+      if (!starCache.canvas) {
+        starCache.canvas = document.createElement("canvas");
+        starCache.canvas.width = 540;
+        starCache.canvas.height = 780;
       }
-      ctx.restore();
+      if (starCache.lastDraw !== bucket) {
+        const sc = starCache.canvas.getContext("2d");
+        sc.clearRect(0, 0, 540, 780);
+        sc.fillStyle = "rgba(161, 220, 255, 0.2)";
+        for (let i = 0; i < 26; i += 1) {
+          const x = ((i * 83) + time) % 460;
+          const y = (i * 59) % 720;
+          sc.fillRect(x, y, 2, 2);
+        }
+        starCache.lastDraw = bucket;
+      }
+      ctx.drawImage(starCache.canvas, 36, 54);
     }
 
     function drawShipHull() {
@@ -2056,6 +2091,8 @@
     }
 
     function drawParticles() {
+      ctx.save();
+      ctx.shadowBlur = 0;
       for (const p of particles) {
         const alpha = Math.max(0, p.life / p.maxLife);
         ctx.beginPath();
@@ -2063,6 +2100,7 @@
         ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
 
     function drawSlings() {
