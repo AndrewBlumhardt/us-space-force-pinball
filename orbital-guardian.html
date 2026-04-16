@@ -13,7 +13,6 @@
       --line: rgba(129, 212, 255, 0.48);
       --cyan: #70ddff;
       --pink: #ff4de1;
-      --violet: #8d6cff;
       --gold: #ffd467;
       --red: #ff6d74;
       --ink: #eaf5ff;
@@ -52,9 +51,9 @@
         radial-gradient(1px 1px at 42% 58%, #fff, transparent),
         radial-gradient(2px 2px at 58% 18%, #fff, transparent),
         radial-gradient(1px 1px at 74% 51%, #cceaff, transparent),
-        radial-gradient(2px 2px at 86% 79%, #fff, transparent),
-        radial-gradient(1px 1px at 93% 36%, #d7f1ff, transparent);
-      animation: starDrift 16s linear infinite;
+        radial-gradient(2px 2px at 88% 14%, #fff, transparent),
+        radial-gradient(1px 1px at 93% 78%, #d6ebff, transparent);
+      animation: starDrift 11s ease-in-out infinite;
     }
 
     @keyframes starDrift {
@@ -319,6 +318,7 @@
         <div><b>Launch:</b> Hold Space, release to fire</div>
         <div><b>Flippers:</b> Left and Right arrows</div>
         <div><b>Restart:</b> Enter after game over</div>
+        <div><b>Reserve rockets:</b> after the first launch, reinforcements auto-deploy with a short delay, up to 3 in play</div>
       </section>
 
       <section class="volume-controls" aria-label="Sound controls">
@@ -333,7 +333,8 @@
       <section class="notes">
         <div><b>Theme cues:</b> delta iconography, orbital rings, guardians, squadron craft, command hull.</div>
         <div><b>Objective:</b> keep the probe in flight, light orbit gates, stack multiplier hits, and avoid bonking any space janitors.</div>
-        <div><b>Targets:</b> NOVA (deep space), DELTA (Space Force symbol), ORBIT (orbital control), SAT (satellite systems), COM (communications).</div>
+        <div><b>Targets:</b> NOVA (deep space), DELTA (Space Force symbol), ORBIT (orbital control), SAT (satellite systems), COM (communications), BOOST (lower rescue bumper).</div>
+        <div><b>Resupply:</b> earn a new rocket at 12,000 points, then each resupply gets 6,000 points harder.</div>
       </section>
 
       <div class="status" id="status">Hold Space to charge the launch rail for rocket deployment.</div>
@@ -395,6 +396,11 @@
       message: "Hold Space to charge the launch rail for rocket deployment."
     };
 
+    let ball = null;
+    let loadedRocket = null;
+    const rockets = [];
+    let reinforceTimer = 0;
+
     // Game-over animation state - reused each game end.
     const gameOverAnim = {
       active: false,
@@ -426,6 +432,18 @@
       maxParticles: 320,
       frameSkip: false,
       particleWriteIndex: 0
+    };
+
+    const rocketRules = {
+      maxConcurrent: 3,
+      reinforceDeployDelay: 132,
+      reinforceLaunchDelay: 18,
+      reinforceLaunchPower: 0.72,
+      boostBumperKick: 1.78
+    };
+
+    const rocketStats = {
+      radius: 10
     };
 
     const restartState = {
@@ -478,19 +496,23 @@
       assistPush: 0.12
     };
 
-    const ball = {
-      x: launcher.holdX,
-      y: launcher.holdY,
-      prevX: launcher.holdX,
-      prevY: launcher.holdY,
-      vx: 0,
-      vy: 0,
-      r: 10,
-      inShooterLane: true,
-      launchAssist: 0,
-      launched: false,
-      trail: []
-    };
+    function createRocket() {
+      return {
+        x: launcher.holdX,
+        y: launcher.holdY,
+        prevX: launcher.holdX,
+        prevY: launcher.holdY,
+        vx: 0,
+        vy: 0,
+        r: rocketStats.radius,
+        inShooterLane: true,
+        launchAssist: 0,
+        launched: false,
+        trail: [],
+        autoLaunchTimer: 0,
+        autoLaunchPower: 0
+      };
+    }
 
     const plunger = {
       x: 490,
@@ -503,11 +525,12 @@
     };
 
     const bumpers = [
-      { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
-      { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
-      { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
-      { x: 188, y: 356, r: 23, points: 220, pulse: 0, label: "SAT" },
-      { x: 351, y: 356, r: 23, points: 220, pulse: 0, label: "COM" }
+      { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA", theme: "cool", kick: 1 },
+      { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA", theme: "cool", kick: 1 },
+      { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT", theme: "cool", kick: 1 },
+      { x: 174, y: 334, r: 24, points: 240, pulse: 0, label: "SAT", theme: "warm", kick: 1.26 },
+      { x: 365, y: 334, r: 24, points: 240, pulse: 0, label: "COM", theme: "warm", kick: 1.26 },
+      { x: 270, y: 704, r: 29, points: 320, pulse: 0, label: "BOOST", theme: "warm", kick: rocketRules.boostBumperKick }
     ];
 
     const gates = [];
@@ -518,8 +541,8 @@
     ];
 
     const slings = [
-      { a: { x: 54, y: 822 }, b: { x: 168, y: 892 }, c: { x: 112, y: 888 }, power: 1.24 },
-      { a: { x: 460, y: 822 }, b: { x: 346, y: 892 }, c: { x: 428, y: 888 }, power: 1.24 }
+      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.5 },
+      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.5 }
     ];
 
     const flippers = {
@@ -611,7 +634,7 @@
     const astronauts = [
       { x: 78, y: 588, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
       { x: 462, y: 596, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
-      { x: 270, y: 748, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
+      { x: 270, y: 822, scale: 0.82, wave: 1.1, radius: 32.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
       { x: 122, y: 686, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "green" },
       { x: 418, y: 690, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "orange" }
     ];
@@ -763,12 +786,7 @@
       launcher.antiReentryY = ty(launcher.antiReentryY);
       launcher.exitGuideX = tx(launcher.exitGuideX);
       launcher.exitGuideY = ty(launcher.exitGuideY);
-
-      ball.x = tx(ball.x);
-      ball.y = ty(ball.y);
-      ball.prevX = tx(ball.prevX);
-      ball.prevY = ty(ball.prevY);
-      ball.r *= s;
+      rocketStats.radius *= s;
 
       plunger.x = tx(plunger.x);
       plunger.y = ty(plunger.y);
@@ -878,22 +896,131 @@
       }
     }
 
+    function spawnLoadedRocket(autoLaunchTimer = 0, autoLaunchPower = 0) {
+      if (rockets.length >= Math.min(rocketRules.maxConcurrent, state.balls)) {
+        return null;
+      }
+      const rocket = createRocket();
+      rocket.autoLaunchTimer = autoLaunchTimer;
+      rocket.autoLaunchPower = autoLaunchPower;
+      rockets.push(rocket);
+      loadedRocket = rocket;
+      return rocket;
+    }
+
     function resetBall() {
-      ball.x = launcher.holdX;
-      ball.y = launcher.holdY;
-      ball.prevX = ball.x;
-      ball.prevY = ball.y;
-      ball.vx = 0;
-      ball.vy = 0;
-      ball.inShooterLane = true;
-      ball.launchAssist = 0;
-      ball.launched = false;
-      ball.trail.length = 0;
+      rockets.length = 0;
+      loadedRocket = null;
+      ball = null;
+      reinforceTimer = 0;
+      spawnLoadedRocket();
       state.launchPower = 0;
       state.charging = false;
       state.multiplier = 1;
       state.comboTimer = 0;
       state.message = "Charge launch rail for rocket deployment.";
+    }
+
+    function launchRocket(rocket, normalized) {
+      ensureAudio();
+      rocket.inShooterLane = true;
+      rocket.x = launcher.holdX;
+      rocket.y = launcher.holdY;
+      rocket.prevX = rocket.x;
+      rocket.prevY = rocket.y;
+      rocket.launchAssist = 0;
+      rocket.vx = -0.6 - normalized * 0.2;
+      rocket.vy = -(plunger.minPower + (plunger.maxPower - plunger.minPower) * normalized);
+      rocket.launched = true;
+      rocket.autoLaunchTimer = 0;
+      if (loadedRocket === rocket) {
+        loadedRocket = null;
+      }
+      launchFx.timer = 64;
+      launchFx.strength = 1.1 + normalized * 1.15;
+      playTone("sawtooth", 180, 0.13, 0.055, 380);
+      playNoise(0.05, 0.02);
+      state.message = "Launch successful. Please wave to the astronauts on the way up.";
+      state.charging = false;
+      state.launchPower = 0;
+      reinforceTimer = rocketRules.reinforceDeployDelay;
+    }
+
+    function maybeDeployReserveRocket() {
+      if (!state.running || state.introActive) {
+        return;
+      }
+
+      const activeTarget = Math.min(rocketRules.maxConcurrent, state.balls);
+      if (loadedRocket && !loadedRocket.launched) {
+        if (loadedRocket.autoLaunchTimer > 0) {
+          loadedRocket.x = launcher.holdX;
+          loadedRocket.y = launcher.holdY;
+          loadedRocket.prevX = loadedRocket.x;
+          loadedRocket.prevY = loadedRocket.y;
+          loadedRocket.autoLaunchTimer -= 1;
+          if (loadedRocket.autoLaunchTimer <= 0) {
+            launchRocket(loadedRocket, loadedRocket.autoLaunchPower);
+          }
+        }
+        return;
+      }
+
+      if (rockets.length === 0 && state.balls > 0) {
+        spawnLoadedRocket();
+        state.message = "Replacement rocket ready on the rail.";
+        return;
+      }
+
+      if (rockets.length >= activeTarget || activeTarget <= 1) {
+        reinforceTimer = 0;
+        return;
+      }
+
+      if (reinforceTimer > 0) {
+        reinforceTimer -= 1;
+        if (reinforceTimer === 0) {
+          spawnLoadedRocket(rocketRules.reinforceLaunchDelay, rocketRules.reinforceLaunchPower);
+          state.message = "Reserve rocket rolling into the launch rail.";
+        }
+      }
+    }
+
+    function loseRocket(drainedRocket) {
+      const index = rockets.indexOf(drainedRocket);
+      if (index >= 0) {
+        rockets.splice(index, 1);
+      }
+      if (loadedRocket === drainedRocket) {
+        loadedRocket = null;
+      }
+
+      state.balls -= 1;
+      playTone("sawtooth", 220, 0.2, 0.05, 92);
+      if (state.balls <= 0 && rockets.length === 0) {
+        state.running = false;
+        state.canRestart = true;
+        state.message = "Rockets expended. Press Enter to redeploy.";
+        if (state.score > state.best) {
+          state.best = state.score;
+          localStorage.setItem("orbitalGuardianBest", String(state.best));
+        }
+        gameOverAnim.active = true;
+        gameOverAnim.tick = 0;
+        gameOverAnim.astronautY = -80;
+        gameOverAnim.astronautSpin = 0;
+        gameOverAnim.blinkOn = true;
+        spawnBurst(board.width * 0.5, board.height * 0.38, "255,109,116", 40);
+        spawnBurst(board.width * 0.5, board.height * 0.38, "255,212,103", 24);
+        return;
+      }
+
+      if (rockets.length === 0 && state.balls > 0) {
+        spawnLoadedRocket();
+        state.message = "Rocket lost. Replacement rocket ready.";
+      } else {
+        state.message = "Rocket lost. Reserve rockets still in the fight.";
+      }
     }
 
     function ensureAudio() {
@@ -979,41 +1106,19 @@
         state.multiplier = Math.min(5, Number((state.multiplier + 0.1).toFixed(1)));
       }
       if (state.score >= state.nextRocketAt && state.balls < 4) {
-          state.balls += 1;
+        state.balls += 1;
         state.nextRocketStep += 6000;
         state.nextRocketAt += state.nextRocketStep;
-          spawnBurst(board.width * 0.5, board.height * 0.5, "255,212,103", 28);
-          playTone("sine", 880, 0.18, 0.06, 320);
-          playTone("sine", 1100, 0.14, 0.05, 220);
+        spawnBurst(board.width * 0.5, board.height * 0.5, "255,212,103", 28);
+        playTone("sine", 880, 0.18, 0.06, 320);
+        playTone("sine", 1100, 0.14, 0.05, 220);
         state.message = "Deep-space resupply complete. Bonus rocket secured.";
-        } else if (state.score >= state.nextRocketAt) {
+        if (!loadedRocket && rockets.length < Math.min(rocketRules.maxConcurrent, state.balls)) {
+          reinforceTimer = Math.max(reinforceTimer, rocketRules.reinforceDeployDelay * 0.5);
+        }
+      } else if (state.score >= state.nextRocketAt) {
         state.nextRocketStep += 6000;
         state.nextRocketAt += state.nextRocketStep;
-        }
-    }
-
-    function loseBall() {
-      state.balls -= 1;
-      playTone("sawtooth", 220, 0.2, 0.05, 92);
-      if (state.balls <= 0) {
-        state.running = false;
-        state.canRestart = true;
-        state.message = "Rockets expended. Press Enter to redeploy.";
-        if (state.score > state.best) {
-          state.best = state.score;
-          localStorage.setItem("orbitalGuardianBest", String(state.best));
-        }
-        // Kick off game-over animation.
-        gameOverAnim.active = true;
-        gameOverAnim.tick = 0;
-        gameOverAnim.astronautY = -80;
-        gameOverAnim.astronautSpin = 0;
-        gameOverAnim.blinkOn = true;
-        // Big entry burst at board center.
-        spawnBurst(board.width * 0.5, board.height * 0.38, "255,109,116", 40);
-        spawnBurst(board.width * 0.5, board.height * 0.38, "255,212,103", 24);
-      } else {
-        resetBall();
       }
     }
 
@@ -1072,9 +1177,10 @@
         ball.vx = 0;
         ball.vy = 0;
         ball.launched = false;
+        loadedRocket = ball;
         state.launchPower = 0;
         state.charging = false;
-        state.message = "Launch fell back - recharge and try again.";
+        state.message = "Rocket fell back - recharge and try again.";
       }
     }
 
@@ -1186,16 +1292,17 @@
         const minDist = ball.r + bumper.r;
         const dist = Math.hypot(dx, dy);
         if (dist < minDist) {
+          const kick = bumper.kick || 1;
           const nx = dx / (dist || 0.001);
           const ny = dy / (dist || 0.001);
           const push = minDist - dist;
           ball.x += nx * push;
           ball.y += ny * push;
-          const speed = Math.max(5.6, Math.hypot(ball.vx, ball.vy));
-          ball.vx = nx * speed + (Math.random() - 0.5) * 1.3;
-          ball.vy = ny * speed - 0.8;
-          bumper.pulse = 1;
-          spawnBurst(bumper.x, bumper.y, "112,221,255", 18);
+          const speed = Math.max(5.6 * kick, Math.hypot(ball.vx, ball.vy));
+          ball.vx = nx * speed + (Math.random() - 0.5) * 1.3 * kick;
+          ball.vy = ny * speed - 0.8 * kick;
+          bumper.pulse = Math.max(bumper.pulse, 0.84 * kick);
+          spawnBurst(bumper.x, bumper.y, bumper.theme === "warm" ? "255,109,116" : "112,221,255", bumper.theme === "warm" ? 24 : 18);
           addScore(bumper.points);
           playTone("square", 560, 0.09, 0.05, 760);
           playTone("triangle", 340, 0.11, 0.035, 250);
@@ -1508,66 +1615,79 @@
         return;
       }
 
-      if (!ball.launched) {
-        ball.x = launcher.holdX;
-        ball.y = launcher.holdY + state.launchPower * 1.0;
-        ball.inShooterLane = true;
-        ball.launchAssist = 0;
+      maybeDeployReserveRocket();
+
+      updateAsteroids();
+      updateAlienSaucers();
+
+      if (loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0) {
+        loadedRocket.x = launcher.holdX;
+        loadedRocket.y = launcher.holdY + state.launchPower * 1.0;
+        loadedRocket.prevX = loadedRocket.x;
+        loadedRocket.prevY = loadedRocket.y;
+        loadedRocket.inShooterLane = true;
+        loadedRocket.launchAssist = 0;
         if (state.charging) {
           state.launchPower = Math.min(plunger.maxCharge, state.launchPower + 0.22);
         }
-        return;
       }
 
-      ball.vy += board.gravity;
-      ball.vx *= board.friction;
-      ball.vy *= board.friction;
-      ball.prevX = ball.x;
-      ball.prevY = ball.y;
-      ball.x += ball.vx;
-      ball.y += ball.vy;
+      const activeRockets = rockets.slice();
+      for (const rocket of activeRockets) {
+        if (!rocket.launched) {
+          continue;
+        }
 
-      updateShooterLane(Math.abs(ball.vy));
-      applyLaunchAssist();
-      applyWallCollisions();
-      applyBoundaryContainment();
-      applyBumperCollisions();
-      applyBeaconCollisions();
-      applySlingCollisions();
-      applyGateCollisions();
-      updateAsteroids();
-      updateAlienSaucers();
-      applyAsteroidCollisions();
-      applyAlienSaucerCollisions();
-      applySpecialCoreCollision();
-      applyAstronautFlybys();
-      applyFlipperCollision(flippers.left, state.leftPressed);
-      applyFlipperCollision(flippers.right, state.rightPressed);
-      for (const flipper of auxFlippers) {
-        const boosted = flipper.side === "left" ? state.leftPressed : state.rightPressed;
-        applyFlipperCollision(flipper, boosted);
-      }
-      for (const flipper of upperFlippers) {
-        const boosted = flipper.side === "left" ? state.leftPressed : state.rightPressed;
-        applyFlipperCollision(flipper, boosted);
+        ball = rocket;
+        ball.vy += board.gravity;
+        ball.vx *= board.friction;
+        ball.vy *= board.friction;
+        ball.prevX = ball.x;
+        ball.prevY = ball.y;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        updateShooterLane(Math.abs(ball.vy));
+        applyLaunchAssist();
+        applyWallCollisions();
+        applyBoundaryContainment();
+        applyBumperCollisions();
+        applyBeaconCollisions();
+        applySlingCollisions();
+        applyGateCollisions();
+        applyAsteroidCollisions();
+        applyAlienSaucerCollisions();
+        applySpecialCoreCollision();
+        applyAstronautFlybys();
+        applyFlipperCollision(flippers.left, state.leftPressed);
+        applyFlipperCollision(flippers.right, state.rightPressed);
+        for (const flipper of auxFlippers) {
+          const boosted = flipper.side === "left" ? state.leftPressed : state.rightPressed;
+          applyFlipperCollision(flipper, boosted);
+        }
+        for (const flipper of upperFlippers) {
+          const boosted = flipper.side === "left" ? state.leftPressed : state.rightPressed;
+          applyFlipperCollision(flipper, boosted);
+        }
+
+        if (ball.x < boardBounds.left - 20 || ball.x > boardBounds.right + 20 || ball.y < boardBounds.top - 40) {
+          ball.x = Math.max(boardBounds.left + ball.r, Math.min(boardBounds.right - ball.r, ball.x));
+          ball.y = Math.max(boardBounds.top + ball.r, ball.y);
+          ball.vx *= -0.6;
+          ball.vy = Math.max(2, Math.abs(ball.vy) * 0.6);
+        }
+
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 16) {
+          ball.trail.shift();
+        }
+
+        if (ball.y - ball.r > board.height + 16) {
+          loseRocket(ball);
+        }
       }
 
-      // Safety catch for rare tunneling escapes through geometry seams.
-      if (ball.x < boardBounds.left - 20 || ball.x > boardBounds.right + 20 || ball.y < boardBounds.top - 40) {
-        ball.x = Math.max(boardBounds.left + ball.r, Math.min(boardBounds.right - ball.r, ball.x));
-        ball.y = Math.max(boardBounds.top + ball.r, ball.y);
-        ball.vx *= -0.6;
-        ball.vy = Math.max(2, Math.abs(ball.vy) * 0.6);
-      }
-
-      ball.trail.push({ x: ball.x, y: ball.y });
-      if (ball.trail.length > 16) {
-        ball.trail.shift();
-      }
-
-      if (ball.y - ball.r > board.height + 16) {
-        loseBall();
-      }
+      ball = loadedRocket || rockets.find((rocket) => rocket.launched) || null;
 
       if (state.comboTimer > 0) {
         state.comboTimer -= 1;
@@ -1969,7 +2089,8 @@
     }
 
     function drawLaunchRailFx() {
-      const launchActive = ball.inShooterLane && ball.launched && ball.vy < -2;
+      const laneRocket = rockets.find((rocket) => rocket.inShooterLane && rocket.launched);
+      const launchActive = Boolean(laneRocket && laneRocket.vy < -2);
       const activeTimer = launchFx.timer > 0 ? launchFx.timer / 64 : 0;
       const alpha = Math.max(activeTimer, launchActive ? 0.72 : 0);
       if (alpha <= 0.01) {
@@ -1977,7 +2098,7 @@
       }
 
       const railX = (launcher.laneLeftX + launcher.laneRightX) * 0.5;
-      const plumeBottomY = launcher.holdY + ball.r * 0.7;
+      const plumeBottomY = launcher.holdY + (laneRocket ? laneRocket.r : rocketStats.radius) * 0.7;
       const intensity = 0.8 + launchFx.strength * 0.9;
       const plumeTopY = launcher.holdY - (120 + intensity * 34);
       const flicker = 0.8 + Math.sin(state.neonTick * 22) * 0.16;
@@ -2048,21 +2169,22 @@
     function drawBumpers() {
       for (const bumper of bumpers) {
         ctx.save();
+        const warm = bumper.theme === "warm";
         const halo = bumper.r + 10 + bumper.pulse * 20;
         const gradient = ctx.createRadialGradient(bumper.x, bumper.y, bumper.r * 0.2, bumper.x, bumper.y, halo);
         gradient.addColorStop(0, "rgba(255, 212, 103, 0.95)");
-        gradient.addColorStop(0.45, "rgba(112, 221, 255, 0.85)");
-        gradient.addColorStop(1, "rgba(112, 221, 255, 0)");
+        gradient.addColorStop(0.45, warm ? "rgba(255, 109, 116, 0.86)" : "rgba(112, 221, 255, 0.85)");
+        gradient.addColorStop(1, warm ? "rgba(255, 109, 116, 0)" : "rgba(112, 221, 255, 0)");
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(bumper.x, bumper.y, halo, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#102459";
+        ctx.fillStyle = warm ? "#2a1430" : "#102459";
         ctx.beginPath();
         ctx.arc(bumper.x, bumper.y, bumper.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "rgba(255, 212, 103, 0.82)";
+        ctx.strokeStyle = warm ? "rgba(255, 109, 116, 0.86)" : "rgba(255, 212, 103, 0.82)";
         ctx.lineWidth = 3;
         ctx.stroke();
 
@@ -2277,22 +2399,22 @@
       ctx.restore();
     }
 
-    function drawBall() {
-      for (let i = 0; i < ball.trail.length; i += 1) {
-        const trail = ball.trail[i];
-        const alpha = i / ball.trail.length;
+    function drawRocket(rocket) {
+      for (let i = 0; i < rocket.trail.length; i += 1) {
+        const trail = rocket.trail[i];
+        const alpha = i / rocket.trail.length;
         ctx.beginPath();
         ctx.fillStyle = `rgba(112, 221, 255, ${alpha * 0.36})`;
-        ctx.arc(trail.x, trail.y, Math.max(1, ball.r * alpha * 0.92), 0, Math.PI * 2);
+        ctx.arc(trail.x, trail.y, Math.max(1, rocket.r * alpha * 0.92), 0, Math.PI * 2);
         ctx.fill();
       }
 
-      const velocityAngle = Math.atan2(ball.vy, ball.vx) + Math.PI * 0.5;
-      const angle = (ball.inShooterLane || ball.launchAssist > 0) ? 0 : velocityAngle;
-      const scale = ball.r / 10;
+      const velocityAngle = Math.atan2(rocket.vy, rocket.vx) + Math.PI * 0.5;
+      const angle = (rocket.inShooterLane || rocket.launchAssist > 0) ? 0 : velocityAngle;
+      const scale = rocket.r / 10;
 
       ctx.save();
-      ctx.translate(ball.x, ball.y);
+      ctx.translate(rocket.x, rocket.y);
       ctx.rotate(angle);
       ctx.scale(scale, scale);
 
@@ -2336,6 +2458,12 @@
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+    }
+
+    function drawBall() {
+      for (const rocket of rockets) {
+        drawRocket(rocket);
+      }
     }
 
     function drawTextAndMarkers() {
@@ -2501,7 +2629,7 @@
       drawBall();
       drawParticles();
       drawTextAndMarkers();
-        drawGameOverOverlay();
+      drawGameOverOverlay();
       if (state.introActive) {
         drawIntroOverlay();
       }
@@ -2555,25 +2683,11 @@
         state.message = "Briefing complete. Show those asteroids who is in charge.";
         return;
       }
-      if (!state.running || ball.launched) {
+      if (!state.running || !loadedRocket || loadedRocket.launched || loadedRocket.autoLaunchTimer > 0) {
         return;
       }
       const normalized = state.launchPower / plunger.maxCharge;
-      const impulse = plunger.minPower + (plunger.maxPower - plunger.minPower) * normalized;
-      ensureAudio();
-      ball.inShooterLane = true;
-      ball.x = launcher.holdX;
-      ball.y = launcher.holdY;
-      ball.launchAssist = 0;
-      ball.vx = -0.6 - normalized * 0.2;
-      ball.vy = -impulse;
-      ball.launched = true;
-      launchFx.timer = 64;
-      launchFx.strength = 1.1 + normalized * 1.15;
-      playTone("sawtooth", 180, 0.13, 0.055, 380);
-      playNoise(0.05, 0.02);
-      state.message = "Launch successful. Please wave to the astronauts on the way up.";
-      state.charging = false;
+      launchRocket(loadedRocket, normalized);
     }
 
     let animationFrameId = null;
@@ -2607,7 +2721,7 @@
         playTone("square", 340, 0.04, 0.02, 300);
       }
       if (event.code === "Space") {
-        if (state.introActive || (state.running && !ball.launched)) {
+        if (state.introActive || (state.running && loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0)) {
           ensureAudio();
           state.charging = true;
           event.preventDefault();
@@ -2636,7 +2750,7 @@
         launchBall();
         return;
       }
-      if (!ball.launched && state.running) {
+      if (loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0 && state.running) {
         state.charging = true;
         return;
       }
