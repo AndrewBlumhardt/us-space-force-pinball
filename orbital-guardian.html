@@ -440,7 +440,8 @@
     };
 
     const rocketRules = {
-      reloadDelay: 42
+      reloadDelay: 42,
+      maxStock: 4
     };
 
     const rocketStats = {
@@ -1136,7 +1137,7 @@
       if (state.multiplier < 5) {
         state.multiplier = Math.min(5, Number((state.multiplier + 0.1).toFixed(1)));
       }
-      if (state.score >= state.nextRocketAt) {
+      if (state.score >= state.nextRocketAt && state.balls < rocketRules.maxStock) {
         state.balls += 1;
         state.nextRocketStep += 6000;
         state.nextRocketAt += state.nextRocketStep;
@@ -1147,6 +1148,9 @@
         if (!loadedRocket && state.balls > rockets.length) {
           reinforceTimer = Math.min(reinforceTimer || rocketRules.reloadDelay, rocketRules.reloadDelay);
         }
+      } else if (state.score >= state.nextRocketAt) {
+        state.nextRocketStep += 6000;
+        state.nextRocketAt += state.nextRocketStep;
       }
     }
 
