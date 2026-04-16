@@ -4,6 +4,10 @@ A browser-based neon pinball game inspired by US Space Force visuals and mission
 
 Launch your rocket, chain combo multipliers, dodge drifting asteroids, and earn resupply drops to keep the mission alive. Six flippers, dynamic space events, and a mission-control banter system keep each run fresh.
 
+<p align="center">
+  <img src="images/pinball.png" alt="Orbital Guardian gameplay screenshot" width="75%">
+</p>
+
 ## ▶️ Play Live
 
 <a href="https://www.techchat.blog/wp-content/uploads/2026/04/orbital-guardian.html" target="_blank" rel="noopener noreferrer">
