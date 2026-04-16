@@ -505,7 +505,8 @@
 
     const rocketRules = {
       reloadDelay: 42,
-      maxStock: 4
+      maxStock: 4,
+      maxActiveLaunched: 3
     };
 
     const rocketStats = {
@@ -2842,6 +2843,10 @@
       statusTextEl.textContent = hudMessage.shown;
     }
 
+    function getLaunchedRocketCount() {
+      return rockets.reduce((count, rocket) => count + (rocket.launched ? 1 : 0), 0);
+    }
+
     function updatePerfPanel(now, frameMs) {
       if (!perfMonitor.enabled) {
         return;
@@ -2856,7 +2861,7 @@
       const heapInfo = performance.memory
         ? `${(performance.memory.usedJSHeapSize / 1048576).toFixed(1)} MB`
         : "n/a";
-      const launchedCount = rockets.reduce((count, rocket) => count + (rocket.launched ? 1 : 0), 0);
+      const launchedCount = getLaunchedRocketCount();
       const reserveCount = Math.max(0, state.balls - launchedCount);
 
       perfPanelEl.textContent = [
@@ -2900,6 +2905,13 @@
         return;
       }
       if (!state.running || !loadedRocket || loadedRocket.launched) {
+        return;
+      }
+      const launchedCount = getLaunchedRocketCount();
+      if (launchedCount >= rocketRules.maxActiveLaunched) {
+        state.message = "Flight deck is full - clear a rocket before launching another.";
+        state.charging = false;
+        state.launchPower = 0;
         return;
       }
       const normalized = state.launchPower / plunger.maxCharge;

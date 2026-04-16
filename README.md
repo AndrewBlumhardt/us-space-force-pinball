@@ -23,6 +23,7 @@ Open `orbital-guardian.html` in any modern browser - or [play the live version](
 | `Space` (hold/release) | Charge and launch |
 | `Left Arrow` | Left flippers |
 | `Right Arrow` | Right flippers |
+| `P` | Toggle performance monitor overlay |
 | `Enter` | Restart after game over |
 | Pointer / Tap | Mobile-friendly launch and flipper input |
 
@@ -36,6 +37,16 @@ Open `orbital-guardian.html` in any modern browser - or [play the live version](
 | Dynamic hazards | Asteroids and moving event effects |
 | Scoring system | Combo timer with up to x5 multiplier |
 | Sound controls | In-game volume slider and mute toggle |
+
+## Performance Monitor
+
+Track runtime performance directly in-game:
+
+- Press `P` to toggle the monitor overlay
+- Or open the game with `?perf=1` to start with it enabled
+- Monitor includes FPS, frame time, hitch count, long-task time, particle load, and low-effects mode status
+
+If FPS drops while particles and active rockets are low, the bottleneck is likely baseline rendering load rather than dynamic effects.
 
 ## Scoring
 
