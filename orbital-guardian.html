@@ -456,7 +456,12 @@
     const perf = {
       maxParticles: 320,
       frameSkip: false,
-      particleWriteIndex: 0
+      particleWriteIndex: 0,
+      lowEffects: false,
+      avgFrameMs: 16.7,
+      lastFrameMs: performance.now(),
+      slowFrames: 0,
+      fastFrames: 0
     };
 
     const rocketRules = {
@@ -761,7 +766,8 @@
       master: null,
       enabled: false,
       volume: 0.7,
-      muted: false
+      muted: false,
+      noiseBuffers: new Map()
     };
 
     const asteroids = [
@@ -1172,11 +1178,16 @@
       if (!audio.enabled || !audio.ctx || !audio.master) {
         return;
       }
-      const frames = Math.floor(audio.ctx.sampleRate * duration);
-      const buffer = audio.ctx.createBuffer(1, frames, audio.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < frames; i += 1) {
-        data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+      const key = String(Math.round(duration * 1000));
+      let buffer = audio.noiseBuffers.get(key);
+      if (!buffer) {
+        const frames = Math.floor(audio.ctx.sampleRate * duration);
+        buffer = audio.ctx.createBuffer(1, frames, audio.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < frames; i += 1) {
+          data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+        }
+        audio.noiseBuffers.set(key, buffer);
       }
       const src = audio.ctx.createBufferSource();
       const env = audio.ctx.createGain();
@@ -1676,7 +1687,9 @@
 
       launchFx.timer -= 1;
       const intensity = Math.max(0.2, launchFx.strength);
-      const plumeCount = 2 + Math.floor(intensity * 5);
+      const plumeCount = perf.lowEffects
+        ? 1 + Math.floor(intensity * 3)
+        : 2 + Math.floor(intensity * 5);
 
       for (let i = 0; i < plumeCount; i += 1) {
         addParticle({
@@ -1695,6 +1708,7 @@
     }
 
     function updatePhysics() {
+      perf.maxParticles = perf.lowEffects ? 180 : 320;
       updateFlippers();
       state.neonTick = (state.neonTick + 0.02) % (Math.PI * 100);
       updateParticles();
@@ -1725,8 +1739,8 @@
         }
       }
 
-      const activeRockets = rockets.slice();
-      for (const rocket of activeRockets) {
+      for (let rocketIndex = rockets.length - 1; rocketIndex >= 0; rocketIndex -= 1) {
+        const rocket = rockets[rocketIndex];
         if (!rocket.launched) {
           continue;
         }
@@ -1847,7 +1861,7 @@
     const starCache = { canvas: null, tick: 0, lastDraw: -1 };
     function drawStarField() {
       const time = performance.now() * 0.02;
-      const bucket = Math.floor(time / 4);
+      const bucket = Math.floor(time / (perf.lowEffects ? 10 : 4));
       if (!starCache.canvas) {
         starCache.canvas = document.createElement("canvas");
         starCache.canvas.width = 540;
@@ -2309,7 +2323,7 @@
         ctx.translate(asteroid.x, asteroid.y);
         ctx.rotate(asteroid.spin);
         ctx.shadowColor = "rgba(255, 190, 120, 0.35)";
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = perf.lowEffects ? 0 : 8;
         ctx.fillStyle = "rgba(124, 112, 103, 0.95)";
         ctx.strokeStyle = "rgba(201, 180, 154, 0.7)";
         ctx.lineWidth = 1.6;
@@ -2371,7 +2385,7 @@
         ctx.stroke();
 
         ctx.fillStyle = "rgba(255, 212, 103, 0.8)";
-        for (let i = -2; i <= 2; i += 1) {
+        for (let i = perf.lowEffects ? -1 : -2; i <= (perf.lowEffects ? 1 : 2); i += 1) {
           ctx.beginPath();
           ctx.arc(i * saucer.rx * 0.36, saucer.ry * 0.1, saucer.ry * 0.18, 0, Math.PI * 2);
           ctx.fill();
@@ -2414,7 +2428,9 @@
     function drawParticles() {
       ctx.save();
       ctx.shadowBlur = 0;
-      for (const p of particles) {
+      const step = perf.lowEffects ? 2 : 1;
+      for (let i = 0; i < particles.length; i += step) {
+        const p = particles[i];
         const alpha = Math.max(0, p.life / p.maxLife);
         ctx.beginPath();
         ctx.fillStyle = `rgba(${p.color}, ${alpha})`;
@@ -2795,6 +2811,26 @@
     let animationFrameId = null;
 
     function gameLoop() {
+      const now = performance.now();
+      const frameMs = now - perf.lastFrameMs;
+      perf.lastFrameMs = now;
+      perf.avgFrameMs = perf.avgFrameMs * 0.92 + frameMs * 0.08;
+      if (perf.avgFrameMs > 22) {
+        perf.slowFrames += 1;
+        perf.fastFrames = 0;
+      } else if (perf.avgFrameMs < 17.5) {
+        perf.fastFrames += 1;
+        perf.slowFrames = 0;
+      } else {
+        perf.slowFrames = Math.max(0, perf.slowFrames - 1);
+        perf.fastFrames = Math.max(0, perf.fastFrames - 1);
+      }
+      if (!perf.lowEffects && perf.slowFrames > 90) {
+        perf.lowEffects = true;
+      } else if (perf.lowEffects && perf.fastFrames > 180) {
+        perf.lowEffects = false;
+      }
+
       perf.frameSkip = document.hidden;
       if (perf.frameSkip) {
         animationFrameId = requestAnimationFrame(gameLoop);
