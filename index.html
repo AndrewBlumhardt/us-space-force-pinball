@@ -478,8 +478,8 @@
       y: 760,
       width: 20,
       height: 154,
-      minPower: 18.0,
-      maxPower: 56.0,
+      minPower: 36.0,
+      maxPower: 112.0,
       maxCharge: 32
     };
 
@@ -499,13 +499,13 @@
     ];
 
     const slings = [
-      { a: { x: 28, y: 720 }, b: { x: 186, y: 790 }, c: { x: 112, y: 888 }, power: 1.24 },
-      { a: { x: 472, y: 720 }, b: { x: 354, y: 790 }, c: { x: 428, y: 888 }, power: 1.24 }
+      { a: { x: 82, y: 756 }, b: { x: 174, y: 808 }, c: { x: 122, y: 870 }, power: 1.24 },
+      { a: { x: 432, y: 756 }, b: { x: 340, y: 808 }, c: { x: 392, y: 870 }, power: 1.24 }
     ];
 
     const flippers = {
       left: {
-        pivot: { x: 182, y: 892 },
+        pivot: { x: 182, y: 930 },
         length: 60,
         width: 14,
         base: 0.34,
@@ -513,7 +513,7 @@
         current: 0.34
       },
       right: {
-        pivot: { x: 358, y: 892 },
+        pivot: { x: 358, y: 930 },
         length: 60,
         width: 14,
         base: Math.PI - 0.34,
@@ -525,7 +525,7 @@
     const auxFlippers = [
       {
         side: "left",
-        pivot: { x: 122, y: 624 },
+        pivot: { x: 146, y: 624 },
         length: 56,
         width: 12,
         base: 0.28,
@@ -534,7 +534,7 @@
       },
       {
         side: "right",
-        pivot: { x: 438, y: 624 },
+        pivot: { x: 414, y: 624 },
         length: 56,
         width: 12,
         base: Math.PI - 0.28,
@@ -656,8 +656,8 @@
     function applyBoardScale() {
       const sourceWidth = 560;
       const sourceHeight = 1000;
-      const sx = 1.608;
-      const sy = 1.963;
+      const sx = 1.9;
+      const sy = 2.12;
       const s = (sx + sy) * 0.5;
       const coreLeft = 28;
       const coreRight = 486;
