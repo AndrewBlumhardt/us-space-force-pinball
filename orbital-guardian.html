@@ -440,10 +440,7 @@
     };
 
     const rocketRules = {
-      maxConcurrent: 3,
-      reinforceDeployDelay: 132,
-      reinforceLaunchDelay: 18,
-      reinforceLaunchPower: 0.72
+      reloadDelay: 42
     };
 
     const rocketStats = {
@@ -500,7 +497,49 @@
       assistPush: 0.12
     };
 
+    const rocketPalette = [
+      {
+        trail: "112, 221, 255",
+        glow: "rgba(112, 221, 255, 0.65)",
+        hullTop: "#ffffff",
+        hullMid: "#d8efff",
+        hullBot: "#6caee2",
+        window: "rgba(255, 212, 103, 0.88)",
+        exhaust: "rgba(255, 122, 84, 0.85)"
+      },
+      {
+        trail: "255, 179, 92",
+        glow: "rgba(255, 179, 92, 0.64)",
+        hullTop: "#fff6e8",
+        hullMid: "#ffd9a8",
+        hullBot: "#e59a3f",
+        window: "rgba(255, 244, 171, 0.88)",
+        exhaust: "rgba(255, 140, 74, 0.88)"
+      },
+      {
+        trail: "164, 255, 180",
+        glow: "rgba(164, 255, 180, 0.62)",
+        hullTop: "#edfff2",
+        hullMid: "#b8ffd2",
+        hullBot: "#56c58e",
+        window: "rgba(207, 255, 196, 0.86)",
+        exhaust: "rgba(122, 255, 168, 0.82)"
+      },
+      {
+        trail: "225, 170, 255",
+        glow: "rgba(225, 170, 255, 0.64)",
+        hullTop: "#fdf2ff",
+        hullMid: "#e8ccff",
+        hullBot: "#aa78d7",
+        window: "rgba(255, 214, 255, 0.9)",
+        exhaust: "rgba(255, 126, 224, 0.84)"
+      }
+    ];
+    let rocketPaletteIndex = 0;
+
     function createRocket() {
+      const style = rocketPalette[rocketPaletteIndex % rocketPalette.length];
+      rocketPaletteIndex += 1;
       return {
         x: launcher.holdX,
         y: launcher.holdY,
@@ -513,8 +552,7 @@
         launchAssist: 0,
         launched: false,
         trail: [],
-        autoLaunchTimer: 0,
-        autoLaunchPower: 0
+        style
       };
     }
 
@@ -901,13 +939,11 @@
       }
     }
 
-    function spawnLoadedRocket(autoLaunchTimer = 0, autoLaunchPower = 0) {
-      if (rockets.length >= Math.min(rocketRules.maxConcurrent, state.balls)) {
+    function spawnLoadedRocket() {
+      if (state.balls <= rockets.length) {
         return null;
       }
       const rocket = createRocket();
-      rocket.autoLaunchTimer = autoLaunchTimer;
-      rocket.autoLaunchPower = autoLaunchPower;
       rockets.push(rocket);
       loadedRocket = rocket;
       return rocket;
@@ -937,7 +973,6 @@
       rocket.vx = -0.6 - normalized * 0.2;
       rocket.vy = -(plunger.minPower + (plunger.maxPower - plunger.minPower) * normalized);
       rocket.launched = true;
-      rocket.autoLaunchTimer = 0;
       if (loadedRocket === rocket) {
         loadedRocket = null;
       }
@@ -948,7 +983,7 @@
       state.message = "Launch successful. Please wave to the astronauts on the way up.";
       state.charging = false;
       state.launchPower = 0;
-      reinforceTimer = rocketRules.reinforceDeployDelay;
+      reinforceTimer = rocketRules.reloadDelay;
     }
 
     function maybeDeployReserveRocket() {
@@ -956,38 +991,28 @@
         return;
       }
 
-      const activeTarget = Math.min(rocketRules.maxConcurrent, state.balls);
       if (loadedRocket && !loadedRocket.launched) {
-        if (loadedRocket.autoLaunchTimer > 0) {
-          loadedRocket.x = launcher.holdX;
-          loadedRocket.y = launcher.holdY;
-          loadedRocket.prevX = loadedRocket.x;
-          loadedRocket.prevY = loadedRocket.y;
-          loadedRocket.autoLaunchTimer -= 1;
-          if (loadedRocket.autoLaunchTimer <= 0) {
-            loadedRocket.autoLaunchTimer = 0;
-            state.message = "Reserve rocket ready - press Space to launch.";
-          }
-        }
+        loadedRocket.x = launcher.holdX;
+        loadedRocket.y = launcher.holdY;
+        loadedRocket.prevX = loadedRocket.x;
+        loadedRocket.prevY = loadedRocket.y;
         return;
       }
 
-      if (rockets.length === 0 && state.balls > 0) {
-        spawnLoadedRocket();
-        state.message = "Replacement rocket ready on the rail.";
-        return;
-      }
-
-      if (rockets.length >= activeTarget || activeTarget <= 1) {
+      if (state.balls <= rockets.length) {
         reinforceTimer = 0;
         return;
+      }
+
+      if (reinforceTimer <= 0) {
+        reinforceTimer = rocketRules.reloadDelay;
       }
 
       if (reinforceTimer > 0) {
         reinforceTimer -= 1;
         if (reinforceTimer === 0) {
-          spawnLoadedRocket(rocketRules.reinforceLaunchDelay, rocketRules.reinforceLaunchPower);
-          state.message = "Reserve rocket rolling into the launch rail.";
+          spawnLoadedRocket();
+          state.message = "Reserve rocket ready - press Space to launch.";
         }
       }
     }
@@ -1022,8 +1047,8 @@
       }
 
       if (rockets.length === 0 && state.balls > 0) {
-        spawnLoadedRocket();
-        state.message = "Rocket lost. Replacement rocket ready.";
+        reinforceTimer = rocketRules.reloadDelay;
+        state.message = "Rocket lost. Loading replacement rocket.";
       } else {
         state.message = "Rocket lost. Reserve rockets still in the fight.";
       }
@@ -1111,7 +1136,7 @@
       if (state.multiplier < 5) {
         state.multiplier = Math.min(5, Number((state.multiplier + 0.1).toFixed(1)));
       }
-      if (state.score >= state.nextRocketAt && state.balls < 4) {
+      if (state.score >= state.nextRocketAt) {
         state.balls += 1;
         state.nextRocketStep += 6000;
         state.nextRocketAt += state.nextRocketStep;
@@ -1119,12 +1144,9 @@
         playTone("sine", 880, 0.18, 0.06, 320);
         playTone("sine", 1100, 0.14, 0.05, 220);
         state.message = "Deep-space resupply complete. Bonus rocket secured.";
-        if (!loadedRocket && rockets.length < Math.min(rocketRules.maxConcurrent, state.balls)) {
-          reinforceTimer = Math.max(reinforceTimer, rocketRules.reinforceDeployDelay * 0.5);
+        if (!loadedRocket && state.balls > rockets.length) {
+          reinforceTimer = Math.min(reinforceTimer || rocketRules.reloadDelay, rocketRules.reloadDelay);
         }
-      } else if (state.score >= state.nextRocketAt) {
-        state.nextRocketStep += 6000;
-        state.nextRocketAt += state.nextRocketStep;
       }
     }
 
@@ -1142,6 +1164,7 @@
       state.leftPressed = false;
       state.rightPressed = false;
       state.charging = false;
+      rocketPaletteIndex = 0;
       gameOverAnim.active = false;
       gameOverAnim.tick = 0;
       restoreDynamicActors();
@@ -1627,7 +1650,7 @@
       updateAsteroids();
       updateAlienSaucers();
 
-      if (loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0) {
+      if (loadedRocket && !loadedRocket.launched) {
         loadedRocket.x = launcher.holdX;
         loadedRocket.y = launcher.holdY + state.launchPower * 1.0;
         loadedRocket.prevX = loadedRocket.x;
@@ -2407,11 +2430,12 @@
     }
 
     function drawRocket(rocket) {
+      const style = rocket.style || rocketPalette[0];
       for (let i = 0; i < rocket.trail.length; i += 1) {
         const trail = rocket.trail[i];
         const alpha = i / rocket.trail.length;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(112, 221, 255, ${alpha * 0.36})`;
+        ctx.fillStyle = `rgba(${style.trail}, ${alpha * 0.36})`;
         ctx.arc(trail.x, trail.y, Math.max(1, rocket.r * alpha * 0.92), 0, Math.PI * 2);
         ctx.fill();
       }
@@ -2425,12 +2449,12 @@
       ctx.rotate(angle);
       ctx.scale(scale, scale);
 
-      ctx.shadowColor = "rgba(112, 221, 255, 0.65)";
+      ctx.shadowColor = style.glow;
       ctx.shadowBlur = 8;
       const hull = ctx.createLinearGradient(0, -12, 0, 12);
-      hull.addColorStop(0, "#ffffff");
-      hull.addColorStop(0.6, "#d8efff");
-      hull.addColorStop(1, "#6caee2");
+      hull.addColorStop(0, style.hullTop);
+      hull.addColorStop(0.6, style.hullMid);
+      hull.addColorStop(1, style.hullBot);
       ctx.fillStyle = hull;
       ctx.beginPath();
       ctx.moveTo(0, -14);
@@ -2452,12 +2476,12 @@
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(255, 212, 103, 0.88)";
+      ctx.fillStyle = style.window;
       ctx.beginPath();
       ctx.arc(0, -4, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "rgba(255, 122, 84, 0.85)";
+      ctx.fillStyle = style.exhaust;
       ctx.beginPath();
       ctx.moveTo(-2.4, 12);
       ctx.lineTo(0, 16);
@@ -2698,7 +2722,7 @@
         state.message = "Briefing complete. Show those asteroids who is in charge.";
         return;
       }
-      if (!state.running || !loadedRocket || loadedRocket.launched || loadedRocket.autoLaunchTimer > 0) {
+      if (!state.running || !loadedRocket || loadedRocket.launched) {
         return;
       }
       const normalized = state.launchPower / plunger.maxCharge;
@@ -2736,7 +2760,7 @@
         playTone("square", 340, 0.04, 0.02, 300);
       }
       if (event.code === "Space") {
-        if (state.introActive || (state.running && loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0)) {
+        if (state.introActive || (state.running && loadedRocket && !loadedRocket.launched)) {
           ensureAudio();
           state.charging = true;
           event.preventDefault();
@@ -2765,7 +2789,7 @@
         state.message = "Press Space to launch briefing.";
         return;
       }
-      if (loadedRocket && !loadedRocket.launched && loadedRocket.autoLaunchTimer <= 0 && state.running) {
+      if (loadedRocket && !loadedRocket.launched && state.running) {
         state.message = "Launch is keyboard-only. Hold and release Space.";
         return;
       }
