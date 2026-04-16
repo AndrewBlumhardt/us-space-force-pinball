@@ -210,6 +210,10 @@
       overflow: hidden;
     }
 
+    .status-text {
+      white-space: normal;
+    }
+
     .board-wrap {
       border-radius: 22px;
       padding: 12px;
@@ -346,8 +350,10 @@
       </section>
 
       <div class="status" id="status">
-        <div class="status-avatar" aria-hidden="true">👨‍🚀</div>
-        <div class="status-message" id="statusText">Hold Space to charge the launch rail for rocket deployment.</div>
+        <div class="status-message">
+          <span class="status-avatar" aria-hidden="true">👨‍🚀</span>
+          <span class="status-text" id="statusText">Hold Space to charge the launch rail for rocket deployment.</span>
+        </div>
       </div>
     </aside>
 
@@ -468,45 +474,44 @@
     };
 
     const quips = [
-      "Astronaut on coffee break - try not to boop the helmet.",
-      "Neon mode engaged. Sunglasses recommended.",
-      "Ground control says this is totally within budget.",
-      "Flight deck cat says this is a purr-fect trajectory.",
-      "Mission note: less screaming, more rocket precision.",
-      "Guardian wisdom: if it glows, hit it responsibly.",
-      "Space superiority achieved, mostly by ricochet.",
-      "Telemetry says that bounce was 12 percent skill.",
-      "Someone at Cape Canaveral just nodded approvingly.",
-      "Orbital mechanics are just geometry with confidence.",
-      "Mission Control requests fewer asteroid introductions.",
-      "Semper Supra, and also semper combo.",
-      "Range safety confirms this launch is delightfully chaotic.",
-      "The launch director called that one aggressively nominal.",
-      "Latest crew-return briefing: still no snacks in orbit.",
-      "Lunar flyby mood: dramatic, accurate, slightly overcaffeinated.",
-      "Delta patch vibes detected. Style points awarded.",
-      "Satellite ops reports your flipper timing is suspiciously elite.",
-      "Ground station note: stop high-fiving asteroids.",
-      "Mission update: gravity remains rude but predictable.",
-      "Command says this counts as advanced trajectory research.",
-      "Space domain awareness now includes your lucky bounces.",
-      "Guidance computer says: wow, okay, that worked.",
-      "Official report: zero debris complaints so far.",
-      "Crew morale increased after that absurd rebound.",
-      "Counterspace threat neutralized by excellent flipper sass.",
-      "Your probe just filed for frequent-flyer status.",
-      "Houston, we have a combo.",
-      "This is your red-planet botanist moment - science the bounce.",
-      "A long time ago in a launch lane far, far away, that rebound worked.",
-      "Interstellar-level docking skills, minus the stress soundtrack.",
-      "The gravity slingshot looked suspiciously 2001-approved.",
-      "Apollo 13 energy - somehow this still works.",
-      "Trench-run confidence detected. Stay on target.",
-      "Guardians-style fist bump queued with the nearest astronaut.",
-      "Warp-drive swagger without violating physics, mostly.",
-      "That was part Top Gun, part moon mission, all chaos.",
-      "Mission control is requesting one clean fist bump and fewer panic flips."
+      "I feel the need... the need for speed.",
+      "Talk to me, Goose!",
+      "You can be my wingman anytime.",
+      "Negative, Ghost Rider, the pattern is full.",
+      "This is what I call a target-rich environment.",
+      "Stay on him... do not let him breathe.",
+      "Fox Two.",
+      "You are cleared hot.",
+      "Keep it tight, stay in formation.",
+      "Let us see what this bird can do.",
+      "Houston, we have a problem.",
+      "Failure is not an option.",
+      "That is one small step for man.",
+      "We are go for launch.",
+      "All systems nominal.",
+      "Prepare for re-entry.",
+      "Hold on, this is gonna get bumpy.",
+      "We are not out of this yet.",
+      "Punch it.",
+      "Stay on target.",
+      "I can do this all day.",
+      "To infinity and beyond.",
+      "Engage.",
+      "Resistance is futile.",
+      "Never tell me the odds.",
+      "Great kid, do not get cocky.",
+      "I have got a bad feeling about this.",
+      "It is a trap.",
+      "You are gonna need a bigger ship.",
+      "On your left.",
+      "Semper Supra.",
+      "Guardian One, keep this orbit spicy.",
+      "Space Force control says we definitely meant to do that."
     ];
+
+    function randomQuip() {
+      return quips[Math.floor(Math.random() * quips.length)];
+    }
 
     const gameOverQuips = [
       "Houston, we have a problem.",
@@ -1016,7 +1021,7 @@
       launchFx.strength = 1.1 + normalized * 1.15;
       playTone("sawtooth", 180, 0.13, 0.055, 380);
       playNoise(0.05, 0.02);
-      state.message = "Launch successful. Please wave to the astronauts on the way up.";
+      state.message = randomQuip();
       state.charging = false;
       state.launchPower = 0;
       reinforceTimer = rocketRules.reloadDelay;
@@ -1085,9 +1090,9 @@
 
       if (rockets.length === 0 && state.balls > 0) {
         reinforceTimer = rocketRules.reloadDelay;
-        state.message = "Rocket lost. Loading replacement rocket.";
+        state.message = randomQuip();
       } else {
-        state.message = "Rocket lost. Reserve rockets still in the fight.";
+        state.message = randomQuip();
       }
     }
 
@@ -1180,7 +1185,7 @@
         spawnBurst(board.width * 0.5, board.height * 0.5, "255,212,103", 28);
         playTone("sine", 880, 0.18, 0.06, 320);
         playTone("sine", 1100, 0.14, 0.05, 220);
-        state.message = "Deep-space resupply complete. Bonus rocket secured.";
+        state.message = randomQuip();
         if (!loadedRocket && state.balls > rockets.length) {
           reinforceTimer = Math.min(reinforceTimer || rocketRules.reloadDelay, rocketRules.reloadDelay);
         }
@@ -1249,7 +1254,7 @@
         loadedRocket = ball;
         state.launchPower = 0;
         state.charging = false;
-        state.message = "Rocket fell back - recharge and try again.";
+        state.message = randomQuip();
       }
     }
 
@@ -1376,7 +1381,7 @@
           addScore(bumper.points);
           playTone("square", 560, 0.09, 0.05, 760);
           playTone("triangle", 340, 0.11, 0.035, 250);
-          state.message = bumper.label + " target confirmed. " + quips[Math.floor(Math.random() * quips.length)];
+          state.message = randomQuip();
         }
         bumper.pulse *= 0.9;
       }
@@ -1400,7 +1405,7 @@
           spawnBurst(beacon.x, beacon.y, "255,109,116", 16);
           addScore(beacon.points);
           playTone("triangle", 430, 0.16, 0.04, 620);
-          state.message = "Beacon uplink acquired. " + quips[Math.floor(Math.random() * quips.length)];
+          state.message = randomQuip();
         }
         beacon.pulse *= 0.9;
       }
@@ -1424,7 +1429,7 @@
           spawnBurst(ball.x, ball.y, "255,77,225", 14);
           addScore(110);
           playTone("sawtooth", 250, 0.1, 0.03, 190);
-          state.message = "Thruster sling engaged. " + quips[Math.floor(Math.random() * quips.length)];
+          state.message = randomQuip();
         }
       }
     }
@@ -1448,7 +1453,7 @@
           spawnBurst(ball.x, ball.y, "255,212,103", 14);
           addScore(gate.points);
           playTone("sine", 680, 0.08, 0.028, 760);
-          state.message = gate.text + " gate cleared.";
+          state.message = randomQuip();
         }
         gate.lit *= 0.92;
       }
@@ -1477,7 +1482,7 @@
           addScore(asteroid.points);
           playNoise(0.05, 0.02);
           playTone("triangle", 190, 0.07, 0.025, 130);
-          state.message = "Asteroid bonk detected. Nobody tell accounting.";
+          state.message = randomQuip();
         }
       }
     }
@@ -1516,9 +1521,9 @@
             spinRate: randomBetween(-0.045, 0.045),
             points: 220
           });
-          state.message = "Quantum core hit - new debris field spawned.";
+          state.message = randomQuip();
         } else {
-          state.message = "Quantum core charged.";
+          state.message = randomQuip();
         }
       }
 
@@ -1541,7 +1546,7 @@
           astronaut.cooldown = 44;
           addScore(320);
           playTone("square", 740, 0.09, 0.04, 940);
-          state.message = "Astronaut flyby bonus scored.";
+          state.message = randomQuip();
         }
 
         astronaut.spin *= 0.84;
@@ -1622,7 +1627,7 @@
           spawnBurst(saucer.x + drift, saucer.y + bobY, "112,221,255", 12);
           addScore(190);
           playTone("triangle", 880, 0.08, 0.035, 620);
-          state.message = "Alien saucer rattled. Please deny everything.";
+          state.message = randomQuip();
         }
       }
     }
