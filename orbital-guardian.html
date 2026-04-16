@@ -2881,6 +2881,19 @@
       setAudioUi();
     });
 
+    // Keep Space reserved for gameplay even when the mute button has focus.
+    muteButton.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+      }
+    });
+
+    muteButton.addEventListener("keyup", (event) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+      }
+    });
+
     canvas.addEventListener("pointerleave", () => {
       state.leftPressed = false;
       state.rightPressed = false;
