@@ -6,11 +6,9 @@ Launch your rocket, chain combo multipliers, dodge drifting asteroids, and earn 
 
 ## ▶️ Play Live
 
-<a href="https://www.techchat.blog/wp-content/uploads/2026/04/orbital-guardian.html" target="_blank">
+<a href="https://www.techchat.blog/wp-content/uploads/2026/04/orbital-guardian.html" target="_blank" rel="noopener noreferrer">
   <img src="https://img.shields.io/badge/▶%20Play%20Orbital%20Guardian-Live%20Demo-70ddff?style=for-the-badge&labelColor=08112d" alt="Play Orbital Guardian">
 </a>
-
-Also hosted at: [andrewblumhardt.github.io/us-space-force-pinball](https://andrewblumhardt.github.io/us-space-force-pinball/)
 
 ## How to Play
 
