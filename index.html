@@ -487,8 +487,8 @@
       { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
       { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
       { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
-      { x: 188, y: 352, r: 23, points: 220, pulse: 0, label: "SAT" },
-      { x: 351, y: 352, r: 23, points: 220, pulse: 0, label: "COM" }
+      { x: 210, y: 390, r: 23, points: 220, pulse: 0, label: "SAT" },
+      { x: 329, y: 390, r: 23, points: 220, pulse: 0, label: "COM" }
     ];
 
     const gates = [];
@@ -499,13 +499,13 @@
     ];
 
     const slings = [
-      { a: { x: 96, y: 780 }, b: { x: 164, y: 820 }, c: { x: 126, y: 876 }, power: 1.24 },
-      { a: { x: 418, y: 780 }, b: { x: 350, y: 820 }, c: { x: 388, y: 876 }, power: 1.24 }
+      { a: { x: 108, y: 804 }, b: { x: 174, y: 842 }, c: { x: 134, y: 900 }, power: 1.24 },
+      { a: { x: 406, y: 804 }, b: { x: 340, y: 842 }, c: { x: 380, y: 900 }, power: 1.24 }
     ];
 
     const flippers = {
       left: {
-        pivot: { x: 182, y: 930 },
+        pivot: { x: 190, y: 946 },
         length: 60,
         width: 14,
         base: 0.34,
@@ -513,7 +513,7 @@
         current: 0.34
       },
       right: {
-        pivot: { x: 358, y: 930 },
+        pivot: { x: 350, y: 946 },
         length: 60,
         width: 14,
         base: Math.PI - 0.34,
@@ -624,9 +624,9 @@
     ];
 
     const alienSaucers = [
-      { x: 118, y: 524, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66 },
-      { x: 424, y: 522, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62 },
-      { x: 270, y: 668, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58 }
+      { x: 118, y: 524, homeX: 118, homeY: 524, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0 },
+      { x: 424, y: 522, homeX: 424, homeY: 522, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0 },
+      { x: 270, y: 668, homeX: 270, homeY: 668, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0 }
     ];
 
     const particles = [];
@@ -762,6 +762,12 @@
       for (const saucer of alienSaucers) {
         saucer.x = tx(saucer.x);
         saucer.y = ty(saucer.y);
+        saucer.homeX = tx(saucer.homeX);
+        saucer.homeY = ty(saucer.homeY);
+        saucer.roamX *= sx;
+        saucer.roamY *= sy;
+        saucer.vx *= sx;
+        saucer.vy *= sy;
         saucer.rx *= s;
         saucer.ry *= s;
       }
@@ -1283,6 +1289,54 @@
     function updateAlienSaucers() {
       for (const saucer of alienSaucers) {
         saucer.bob += saucer.speed;
+        saucer.x += saucer.vx;
+        saucer.y += saucer.vy;
+        if (saucer.cooldown > 0) {
+          saucer.cooldown -= 1;
+        }
+
+        if (saucer.x < saucer.homeX - saucer.roamX || saucer.x > saucer.homeX + saucer.roamX) {
+          saucer.vx *= -1;
+          saucer.x = Math.max(saucer.homeX - saucer.roamX, Math.min(saucer.homeX + saucer.roamX, saucer.x));
+        }
+
+        if (saucer.y < saucer.homeY - saucer.roamY || saucer.y > saucer.homeY + saucer.roamY) {
+          saucer.vy *= -1;
+          saucer.y = Math.max(saucer.homeY - saucer.roamY, Math.min(saucer.homeY + saucer.roamY, saucer.y));
+        }
+
+        saucer.hit *= 0.9;
+      }
+    }
+
+    function applyAlienSaucerCollisions() {
+      for (const saucer of alienSaucers) {
+        const drift = Math.sin(saucer.bob) * saucer.drift;
+        const bobY = Math.cos(saucer.bob * 1.4) * 3.5;
+        const dx = ball.x - (saucer.x + drift);
+        const dy = ball.y - (saucer.y + bobY);
+        const rx = saucer.rx + ball.r;
+        const ry = saucer.ry + ball.r * 0.8;
+        const ellipseHit = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
+
+        if (ellipseHit < 1 && saucer.cooldown <= 0) {
+          const angle = Math.atan2(dy, dx);
+          const nx = Math.cos(angle);
+          const ny = Math.sin(angle);
+          ball.x += nx * 6;
+          ball.y += ny * 6;
+          ball.vx += nx * 2.8 + saucer.vx * 0.35;
+          ball.vy += ny * 2.4 - 1.2;
+          saucer.vx -= nx * 0.9;
+          saucer.vy -= ny * 0.7;
+          saucer.hit = 1;
+          saucer.cooldown = 18;
+          saucer.glow = Math.min(1, saucer.glow + 0.22);
+          spawnBurst(saucer.x + drift, saucer.y + bobY, "112,221,255", 12);
+          addScore(190);
+          playTone("triangle", 880, 0.08, 0.035, 620);
+          state.message = "Alien saucer rattled. Please deny everything.";
+        }
       }
     }
 
@@ -1370,6 +1424,7 @@
       updateAsteroids();
       updateAlienSaucers();
       applyAsteroidCollisions();
+      applyAlienSaucerCollisions();
       applySpecialCoreCollision();
       applyAstronautFlybys();
       applyFlipperCollision(flippers.left, state.leftPressed);
@@ -1768,37 +1823,39 @@
 
     function drawLaunchRailFx() {
       const launchActive = ball.inShooterLane && ball.launched && ball.vy < -2;
-      const activeTimer = launchFx.timer > 0 ? launchFx.timer / 48 : 0;
-      const alpha = Math.max(activeTimer, launchActive ? 0.55 : 0);
+      const activeTimer = launchFx.timer > 0 ? launchFx.timer / 64 : 0;
+      const alpha = Math.max(activeTimer, launchActive ? 0.72 : 0);
       if (alpha <= 0.01) {
         return;
       }
 
       const railX = (launcher.laneLeftX + launcher.laneRightX) * 0.5;
       const plumeBottomY = launcher.holdY + ball.r * 0.7;
-      const plumeTopY = launcher.holdY - 120;
+      const intensity = 0.8 + launchFx.strength * 0.9;
+      const plumeTopY = launcher.holdY - (120 + intensity * 34);
       const flicker = 0.8 + Math.sin(state.neonTick * 22) * 0.16;
+      const plumeWidth = 14 + intensity * 7;
 
       ctx.save();
       const plume = ctx.createLinearGradient(railX, plumeBottomY, railX, plumeTopY);
-      plume.addColorStop(0, `rgba(255, 164, 98, ${0.52 * alpha * flicker})`);
-      plume.addColorStop(0.35, `rgba(255, 214, 124, ${0.36 * alpha * flicker})`);
+      plume.addColorStop(0, `rgba(255, 164, 98, ${0.68 * alpha * flicker})`);
+      plume.addColorStop(0.35, `rgba(255, 214, 124, ${0.5 * alpha * flicker})`);
       plume.addColorStop(1, "rgba(112, 221, 255, 0)");
       ctx.fillStyle = plume;
       ctx.beginPath();
-      ctx.moveTo(railX - 14, plumeBottomY + 8);
-      ctx.lineTo(railX + 14, plumeBottomY + 8);
-      ctx.lineTo(railX + 7, plumeTopY);
-      ctx.lineTo(railX - 7, plumeTopY);
+      ctx.moveTo(railX - plumeWidth, plumeBottomY + 10);
+      ctx.lineTo(railX + plumeWidth, plumeBottomY + 10);
+      ctx.lineTo(railX + plumeWidth * 0.45, plumeTopY);
+      ctx.lineTo(railX - plumeWidth * 0.45, plumeTopY);
       ctx.closePath();
       ctx.fill();
 
-      const shock = ctx.createRadialGradient(railX, plumeBottomY, 4, railX, plumeBottomY, 30);
-      shock.addColorStop(0, `rgba(255, 233, 173, ${0.95 * alpha})`);
+      const shock = ctx.createRadialGradient(railX, plumeBottomY, 6, railX, plumeBottomY, 38 + intensity * 8);
+      shock.addColorStop(0, `rgba(255, 233, 173, ${alpha})`);
       shock.addColorStop(1, "rgba(255, 233, 173, 0)");
       ctx.fillStyle = shock;
       ctx.beginPath();
-      ctx.arc(railX, plumeBottomY, 30, 0, Math.PI * 2);
+      ctx.arc(railX, plumeBottomY, 38 + intensity * 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -1924,16 +1981,17 @@
         const bobY = Math.cos(saucer.bob * 1.4) * 3.5;
         ctx.save();
         ctx.translate(saucer.x + drift, saucer.y + bobY);
+        ctx.rotate(Math.sin(saucer.bob * 0.7) * 0.08 + saucer.hit * 0.18);
 
         const halo = ctx.createRadialGradient(0, 0, saucer.ry * 0.6, 0, 0, saucer.rx * 2);
-        halo.addColorStop(0, `rgba(112, 221, 255, ${0.2 + saucer.glow * 0.3})`);
+        halo.addColorStop(0, `rgba(112, 221, 255, ${0.2 + saucer.glow * 0.3 + saucer.hit * 0.2})`);
         halo.addColorStop(1, "rgba(112, 221, 255, 0)");
         ctx.fillStyle = halo;
         ctx.beginPath();
         ctx.ellipse(0, 0, saucer.rx * 1.85, saucer.ry * 1.2, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "rgba(120, 236, 255, 0.86)";
+        ctx.fillStyle = saucer.hit > 0.2 ? "rgba(255, 190, 126, 0.92)" : "rgba(120, 236, 255, 0.86)";
         ctx.beginPath();
         ctx.ellipse(0, 0, saucer.rx, saucer.ry, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -2132,18 +2190,18 @@
     function drawTextAndMarkers() {
       ctx.save();
       const pulse = 0.45 + Math.sin(state.neonTick * 1.8) * 0.25;
-      ctx.font = "900 42px Segoe UI";
+      ctx.font = "900 84px Segoe UI";
       ctx.fillStyle = `rgba(235, 245, 255, ${0.76 + pulse * 0.25})`;
       ctx.shadowColor = "rgba(112, 221, 255, 0.65)";
       ctx.shadowBlur = 15;
       const titleText = "US SPACE FORCE";
       const titleX = (board.width - ctx.measureText(titleText).width) * 0.5;
-      ctx.fillText(titleText, titleX, 82);
-      ctx.font = "800 22px Segoe UI";
+      ctx.fillText(titleText, titleX, 112);
+      ctx.font = "800 30px Segoe UI";
       ctx.fillStyle = "rgba(112, 221, 255, 0.86)";
       const subtitleText = "SEMPER SUPRA";
       const subtitleX = (board.width - ctx.measureText(subtitleText).width) * 0.5;
-      ctx.fillText(subtitleText, subtitleX, 116);
+      ctx.fillText(subtitleText, subtitleX, 154);
       ctx.shadowBlur = 0;
 
       if (!state.running) {
@@ -2271,8 +2329,8 @@
       ball.vx = -0.6 - normalized * 0.2;
       ball.vy = -impulse;
       ball.launched = true;
-      launchFx.timer = 48;
-      launchFx.strength = 0.7 + normalized * 0.8;
+      launchFx.timer = 64;
+      launchFx.strength = 1.1 + normalized * 1.15;
       playTone("sawtooth", 180, 0.13, 0.055, 380);
       playNoise(0.05, 0.02);
       state.message = "Launch successful. Please wave to the astronauts on the way up.";
