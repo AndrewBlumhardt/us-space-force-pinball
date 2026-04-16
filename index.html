@@ -451,12 +451,12 @@
       holdY: 860,
       laneLeftX: 486,
       laneRightX: 514,
-      topExitY: 258,
-      antiReentryY: 280,
-      exitGuideX: 458,
-      exitGuideY: 196,
-      assistFrames: 20,
-      assistPush: 0.2
+      topExitY: 244,
+      antiReentryY: 272,
+      exitGuideX: 448,
+      exitGuideY: 178,
+      assistFrames: 14,
+      assistPush: 0.12
     };
 
     const ball = {
@@ -478,8 +478,8 @@
       y: 760,
       width: 20,
       height: 154,
-      minPower: 36.0,
-      maxPower: 112.0,
+      minPower: 28.8,
+      maxPower: 89.6,
       maxCharge: 32
     };
 
@@ -499,8 +499,8 @@
     ];
 
     const slings = [
-      { a: { x: 82, y: 756 }, b: { x: 174, y: 808 }, c: { x: 122, y: 870 }, power: 1.24 },
-      { a: { x: 432, y: 756 }, b: { x: 340, y: 808 }, c: { x: 392, y: 870 }, power: 1.24 }
+      { a: { x: 96, y: 780 }, b: { x: 164, y: 820 }, c: { x: 126, y: 876 }, power: 1.24 },
+      { a: { x: 418, y: 780 }, b: { x: 350, y: 820 }, c: { x: 388, y: 876 }, power: 1.24 }
     ];
 
     const flippers = {
@@ -587,11 +587,11 @@
     ];
 
     const astronauts = [
-      { x: 78, y: 540, scale: 1, wave: 0.4, radius: 38, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
-      { x: 462, y: 548, scale: 0.92, wave: 2.1, radius: 38, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
-      { x: 270, y: 704, scale: 0.78, wave: 1.1, radius: 34, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
-      { x: 148, y: 462, scale: 0.7, wave: 0.9, radius: 32, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
-      { x: 338, y: 600, scale: 0.66, wave: 2.8, radius: 28, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
+      { x: 78, y: 540, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
+      { x: 462, y: 548, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
+      { x: 270, y: 704, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
+      { x: 148, y: 462, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
+      { x: 338, y: 600, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
     ];
 
     const specialCore = {
@@ -943,8 +943,8 @@
         ball.inShooterLane = false;
         ball.x = launcher.exitGuideX;
         ball.y = launcher.exitGuideY;
-        ball.vx = -Math.max(2.8, launchImpulse * 0.28);
-        ball.vy = Math.min(ball.vy, -6.2);
+        ball.vx = -Math.max(1.8, launchImpulse * 0.16);
+        ball.vy = Math.min(ball.vy, -8.4);
         ball.launchAssist = launcher.assistFrames;
         return;
       }
@@ -1805,8 +1805,8 @@
 
     function drawWalls() {
       ctx.save();
-      ctx.strokeStyle = "rgba(129, 212, 255, 0.74)";
-      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(86, 124, 168, 0.44)";
+      ctx.lineWidth = 4;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       ctx.beginPath();
@@ -1816,8 +1816,8 @@
       }
       ctx.stroke();
 
-      ctx.strokeStyle = "rgba(255, 212, 103, 0.24)";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(128, 157, 192, 0.12)";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       for (const wall of walls) {
         ctx.moveTo(wall.ax, wall.ay);
@@ -2132,23 +2132,23 @@
     function drawTextAndMarkers() {
       ctx.save();
       const pulse = 0.45 + Math.sin(state.neonTick * 1.8) * 0.25;
-      ctx.font = "800 34px Segoe UI";
+      ctx.font = "900 42px Segoe UI";
       ctx.fillStyle = `rgba(235, 245, 255, ${0.76 + pulse * 0.25})`;
       ctx.shadowColor = "rgba(112, 221, 255, 0.65)";
       ctx.shadowBlur = 15;
       const titleText = "US SPACE FORCE";
       const titleX = (board.width - ctx.measureText(titleText).width) * 0.5;
-      ctx.fillText(titleText, titleX, 76);
-      ctx.font = "700 18px Segoe UI";
+      ctx.fillText(titleText, titleX, 82);
+      ctx.font = "800 22px Segoe UI";
       ctx.fillStyle = "rgba(112, 221, 255, 0.86)";
       const subtitleText = "SEMPER SUPRA";
       const subtitleX = (board.width - ctx.measureText(subtitleText).width) * 0.5;
-      ctx.fillText(subtitleText, subtitleX, 106);
+      ctx.fillText(subtitleText, subtitleX, 116);
       ctx.shadowBlur = 0;
 
       if (!state.running) {
         ctx.fillStyle = "rgba(255, 109, 116, 0.96)";
-        ctx.font = "900 42px Segoe UI";
+        ctx.font = "900 56px Segoe UI";
         ctx.fillText("GAME OVER", 150, 476);
       }
       ctx.restore();
