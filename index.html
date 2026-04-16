@@ -340,7 +340,7 @@
     </aside>
 
     <section class="board-wrap">
-      <canvas id="game" width="760" height="1400" role="img" aria-label="Pinball board shaped like a spacecraft in flight"></canvas>
+      <canvas id="game" width="840" height="1560" role="img" aria-label="Pinball board shaped like a spacecraft in flight"></canvas>
     </section>
   </main>
 
@@ -400,6 +400,13 @@
       centerY: 438,
       scaleX: 1,
       scaleY: 1
+    };
+
+    const asteroidBounds = {
+      minX: 80,
+      maxX: 450,
+      minY: 360,
+      maxY: 760
     };
 
     const perf = {
@@ -477,9 +484,9 @@
     };
 
     const bumpers = [
-      { x: 135, y: 206, r: 29, points: 140, pulse: 0, label: "NOVA" },
-      { x: 270, y: 166, r: 25, points: 180, pulse: 0, label: "DELTA" },
-      { x: 404, y: 214, r: 29, points: 140, pulse: 0, label: "ORBIT" },
+      { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
+      { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
+      { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
       { x: 188, y: 352, r: 23, points: 220, pulse: 0, label: "SAT" },
       { x: 351, y: 352, r: 23, points: 220, pulse: 0, label: "COM" }
     ];
@@ -548,7 +555,7 @@
       },
       {
         side: "right",
-        pivot: { x: 430, y: 438 },
+        pivot: { x: 394, y: 438 },
         length: 54,
         width: 11,
         base: Math.PI - 0.22,
@@ -584,8 +591,7 @@
       { x: 462, y: 548, scale: 0.92, wave: 2.1, radius: 38, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
       { x: 270, y: 704, scale: 0.78, wave: 1.1, radius: 34, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
       { x: 148, y: 462, scale: 0.7, wave: 0.9, radius: 32, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
-      { x: 338, y: 600, scale: 0.66, wave: 2.8, radius: 28, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
-      { x: 410, y: 770, scale: 0.62, wave: 1.6, radius: 26, spin: 0, glow: 0, cooldown: 0, suit: "standard" }
+      { x: 338, y: 600, scale: 0.66, wave: 2.8, radius: 28, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
     ];
 
     const specialCore = {
@@ -650,8 +656,8 @@
     function applyBoardScale() {
       const sourceWidth = 560;
       const sourceHeight = 1000;
-      const sx = 1.24;
-      const sy = 1.28;
+      const sx = 1.34;
+      const sy = 1.42;
       const s = (sx + sy) * 0.5;
       const coreLeft = 28;
       const coreRight = 486;
@@ -749,6 +755,11 @@
 
       launchFx.plumeX = tx(launchFx.plumeX);
       launchFx.plumeY = ty(launchFx.plumeY);
+
+      asteroidBounds.minX = tx(72);
+      asteroidBounds.maxX = tx(442);
+      asteroidBounds.minY = ty(320);
+      asteroidBounds.maxY = ty(780);
 
       boardArt.centerX = tx(boardArt.sourceCenterX);
       boardArt.centerY = ty(boardArt.sourceCenterY);
@@ -1190,8 +1201,8 @@
 
         if (asteroids.length < 7) {
           asteroids.push({
-            x: randomBetween(100, 430),
-            y: randomBetween(360, 620),
+            x: randomBetween(asteroidBounds.minX + 20, asteroidBounds.maxX - 20),
+            y: randomBetween(asteroidBounds.minY + 30, asteroidBounds.maxY - 50),
             r: randomBetween(12, 19),
             vx: randomBetween(-0.8, 0.8),
             vy: randomBetween(-0.4, 0.5),
@@ -1238,11 +1249,20 @@
         asteroid.y += asteroid.vy;
         asteroid.spin += asteroid.spinRate;
 
-        if (asteroid.x < 56 || asteroid.x > 444) {
-          asteroid.vx *= -1;
+        if (asteroid.x < asteroidBounds.minX) {
+          asteroid.x = asteroidBounds.minX;
+          asteroid.vx = Math.abs(asteroid.vx);
+        } else if (asteroid.x > asteroidBounds.maxX) {
+          asteroid.x = asteroidBounds.maxX;
+          asteroid.vx = -Math.abs(asteroid.vx);
         }
-        if (asteroid.y < 352 || asteroid.y > 700) {
-          asteroid.vy *= -1;
+
+        if (asteroid.y < asteroidBounds.minY) {
+          asteroid.y = asteroidBounds.minY;
+          asteroid.vy = Math.abs(asteroid.vy);
+        } else if (asteroid.y > asteroidBounds.maxY) {
+          asteroid.y = asteroidBounds.maxY;
+          asteroid.vy = -Math.abs(asteroid.vy);
         }
       }
     }
@@ -1742,28 +1762,30 @@
       }
 
       const railX = (launcher.laneLeftX + launcher.laneRightX) * 0.5;
+      const plumeBottomY = launcher.holdY + ball.r * 0.7;
+      const plumeTopY = launcher.holdY - 120;
       const flicker = 0.8 + Math.sin(state.neonTick * 22) * 0.16;
 
       ctx.save();
-      const plume = ctx.createLinearGradient(railX, 930, railX, 650);
+      const plume = ctx.createLinearGradient(railX, plumeBottomY, railX, plumeTopY);
       plume.addColorStop(0, `rgba(255, 164, 98, ${0.52 * alpha * flicker})`);
       plume.addColorStop(0.35, `rgba(255, 214, 124, ${0.36 * alpha * flicker})`);
       plume.addColorStop(1, "rgba(112, 221, 255, 0)");
       ctx.fillStyle = plume;
       ctx.beginPath();
-      ctx.moveTo(railX - 16, 940);
-      ctx.lineTo(railX + 16, 940);
-      ctx.lineTo(railX + 8, 650);
-      ctx.lineTo(railX - 8, 650);
+      ctx.moveTo(railX - 14, plumeBottomY + 8);
+      ctx.lineTo(railX + 14, plumeBottomY + 8);
+      ctx.lineTo(railX + 7, plumeTopY);
+      ctx.lineTo(railX - 7, plumeTopY);
       ctx.closePath();
       ctx.fill();
 
-      const shock = ctx.createRadialGradient(railX, 930, 4, railX, 930, 36);
+      const shock = ctx.createRadialGradient(railX, plumeBottomY, 4, railX, plumeBottomY, 30);
       shock.addColorStop(0, `rgba(255, 233, 173, ${0.95 * alpha})`);
       shock.addColorStop(1, "rgba(255, 233, 173, 0)");
       ctx.fillStyle = shock;
       ctx.beginPath();
-      ctx.arc(railX, 930, 36, 0, Math.PI * 2);
+      ctx.arc(railX, plumeBottomY, 30, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -2003,7 +2025,7 @@
       }
 
       const velocityAngle = Math.atan2(ball.vy, ball.vx) + Math.PI * 0.5;
-      const angle = (ball.inShooterLane || ball.launchAssist > 0) ? -Math.PI * 0.5 : velocityAngle;
+      const angle = (ball.inShooterLane || ball.launchAssist > 0) ? 0 : velocityAngle;
       const scale = ball.r / 10;
 
       ctx.save();
@@ -2060,10 +2082,14 @@
       ctx.fillStyle = `rgba(235, 245, 255, ${0.76 + pulse * 0.25})`;
       ctx.shadowColor = "rgba(112, 221, 255, 0.65)";
       ctx.shadowBlur = 15;
-      ctx.fillText("US SPACE FORCE", 150, 58);
+      const titleText = "US SPACE FORCE";
+      const titleX = (board.width - ctx.measureText(titleText).width) * 0.5;
+      ctx.fillText(titleText, titleX, 58);
       ctx.font = "700 12px Segoe UI";
       ctx.fillStyle = "rgba(112, 221, 255, 0.86)";
-      ctx.fillText("SEMPER SUPRA", 226, 82);
+      const subtitleText = "SEMPER SUPRA";
+      const subtitleX = (board.width - ctx.measureText(subtitleText).width) * 0.5;
+      ctx.fillText(subtitleText, subtitleX, 82);
       ctx.shadowBlur = 0;
 
       if (!state.running) {
