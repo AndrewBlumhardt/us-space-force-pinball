@@ -564,6 +564,9 @@
       }
     ];
 
+    // Hard containment boundaries in source coords - scaled at startup.
+    const boardBounds = { left: 28, right: 514, top: 18 };
+
     const walls = [
       { ax: 28, ay: 62, bx: 28, by: 720 },
       { ax: 28, ay: 62, bx: 142, by: 30 },
@@ -775,6 +778,10 @@
       launchFx.plumeX = tx(launchFx.plumeX);
       launchFx.plumeY = ty(launchFx.plumeY);
 
+      boardBounds.left = tx(boardBounds.left);
+      boardBounds.right = tx(boardBounds.right);
+      boardBounds.top = ty(boardBounds.top);
+
       asteroidBounds.minX = tx(72);
       asteroidBounds.maxX = tx(442);
       asteroidBounds.minY = ty(320);
@@ -969,18 +976,18 @@
     }
 
     function applyBoundaryContainment() {
-      if (ball.x - ball.r < 22) {
-        ball.x = 22 + ball.r;
+      if (ball.x - ball.r < boardBounds.left) {
+        ball.x = boardBounds.left + ball.r;
         ball.vx = Math.abs(ball.vx) * 0.88;
       }
 
-      if (ball.x + ball.r > launcher.laneRightX) {
-        ball.x = launcher.laneRightX - ball.r;
+      if (ball.x + ball.r > boardBounds.right) {
+        ball.x = boardBounds.right - ball.r;
         ball.vx = -Math.abs(ball.vx) * 0.88;
       }
 
-      if (ball.y - ball.r < 12) {
-        ball.y = 12 + ball.r;
+      if (ball.y - ball.r < boardBounds.top) {
+        ball.y = boardBounds.top + ball.r;
         ball.vy = Math.abs(ball.vy) * 0.82;
       }
 
@@ -1439,9 +1446,9 @@
       }
 
       // Safety catch for rare tunneling escapes through geometry seams.
-      if (ball.x < -40 || ball.x > board.width + 40 || ball.y < -80) {
-        ball.x = Math.max(ball.r + 24, Math.min(board.width - ball.r - 24, ball.x));
-        ball.y = Math.max(ball.r + 24, ball.y);
+      if (ball.x < boardBounds.left - 20 || ball.x > boardBounds.right + 20 || ball.y < boardBounds.top - 40) {
+        ball.x = Math.max(boardBounds.left + ball.r, Math.min(boardBounds.right - ball.r, ball.x));
+        ball.y = Math.max(boardBounds.top + ball.r, ball.y);
         ball.vx *= -0.6;
         ball.vy = Math.max(2, Math.abs(ball.vy) * 0.6);
       }
