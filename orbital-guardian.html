@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2370ddff'/%3E%3Cstop offset='1' stop-color='%232d79c8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='12' fill='%2309142f'/%3E%3Cpath d='M32 8 L44 30 L36 28 L36 46 L28 46 L28 28 L20 30 Z' fill='url(%23g)' stroke='%23eaf5ff' stroke-width='2'/%3E%3Ccircle cx='32' cy='21' r='3' fill='%23ffd467'/%3E%3C/svg%3E" />
-  <title>Orbital Guardian Pinball</title>
+  <title>Orbital Guardian Rocket Deck</title>
   <style>
     :root {
       --bg-1: #040814;
@@ -301,11 +301,11 @@
 <body>
   <div class="stars"></div>
 
-  <main class="layout" aria-label="US Space Force inspired pinball game">
+  <main class="layout" aria-label="US Space Force inspired rocket game">
     <aside class="panel" aria-live="polite">
       <h1 class="title">
         Orbital Guardian
-        <span>US Space Force inspired pinball flight deck</span>
+        <span>US Space Force inspired rocket flight deck</span>
       </h1>
 
       <ul class="stats">
@@ -340,7 +340,7 @@
     </aside>
 
     <section class="board-wrap">
-      <canvas id="game" width="1008" height="2160" role="img" aria-label="Pinball board shaped like a spacecraft in flight"></canvas>
+      <canvas id="game" width="1008" height="2160" role="img" aria-label="Rocket board shaped like a spacecraft in flight"></canvas>
     </section>
   </main>
 
@@ -381,7 +381,8 @@
       score: 0,
       best: Number(localStorage.getItem("orbitalGuardianBest") || 0),
       balls: 3,
-      nextRocketAt: 5000,
+      nextRocketAt: 12000,
+      nextRocketStep: 12000,
       multiplier: 1,
       comboTimer: 0,
       launchPower: 0,
@@ -431,7 +432,7 @@
       "Neon mode engaged. Sunglasses recommended.",
       "Ground control says this is totally within budget.",
       "Flight deck cat says this is a purr-fect trajectory.",
-      "Mission note: less screaming, more pinball precision.",
+      "Mission note: less screaming, more rocket precision.",
       "Guardian wisdom: if it glows, hit it responsibly.",
       "Space superiority achieved, mostly by ricochet.",
       "Telemetry says that bounce was 12 percent skill.",
@@ -499,8 +500,8 @@
       { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
       { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
       { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
-      { x: 200, y: 378, r: 23, points: 220, pulse: 0, label: "SAT" },
-      { x: 339, y: 378, r: 23, points: 220, pulse: 0, label: "COM" }
+      { x: 188, y: 356, r: 23, points: 220, pulse: 0, label: "SAT" },
+      { x: 351, y: 356, r: 23, points: 220, pulse: 0, label: "COM" }
     ];
 
     const gates = [];
@@ -511,8 +512,8 @@
     ];
 
     const slings = [
-      { a: { x: 62, y: 810 }, b: { x: 166, y: 884 }, c: { x: 112, y: 888 }, power: 1.24 },
-      { a: { x: 452, y: 810 }, b: { x: 348, y: 884 }, c: { x: 428, y: 888 }, power: 1.24 }
+      { a: { x: 54, y: 822 }, b: { x: 168, y: 892 }, c: { x: 112, y: 888 }, power: 1.24 },
+      { a: { x: 460, y: 822 }, b: { x: 346, y: 892 }, c: { x: 428, y: 888 }, power: 1.24 }
     ];
 
     const flippers = {
@@ -605,8 +606,8 @@
       { x: 78, y: 588, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
       { x: 462, y: 596, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
       { x: 270, y: 748, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
-      { x: 170, y: 444, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "green" },
-      { x: 382, y: 552, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "orange" }
+      { x: 122, y: 686, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "green" },
+      { x: 418, y: 690, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "orange" }
     ];
 
     const specialCore = {
@@ -641,7 +642,7 @@
     const alienSaucers = [
       { x: 110, y: 486, homeX: 110, homeY: 486, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0, color: "120, 236, 255" },
       { x: 430, y: 484, homeX: 430, homeY: 484, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0, color: "200, 130, 255" },
-      { x: 270, y: 620, homeX: 270, homeY: 620, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0, color: "130, 255, 180" }
+      { x: 270, y: 620, homeX: 270, homeY: 620, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.52, hit: 0, cooldown: 0, color: "92, 208, 148" }
     ];
 
     const particles = [];
@@ -912,15 +913,17 @@
       if (state.multiplier < 5) {
         state.multiplier = Math.min(5, Number((state.multiplier + 0.1).toFixed(1)));
       }
-        if (state.score >= state.nextRocketAt && state.balls < 5) {
+      if (state.score >= state.nextRocketAt && state.balls < 4) {
           state.balls += 1;
-          state.nextRocketAt += 5000;
+        state.nextRocketStep += 6000;
+        state.nextRocketAt += state.nextRocketStep;
           spawnBurst(board.width * 0.5, board.height * 0.5, "255,212,103", 28);
           playTone("sine", 880, 0.18, 0.06, 320);
           playTone("sine", 1100, 0.14, 0.05, 220);
-          state.message = "Orbital resupply complete. Bonus rocket docked.";
+        state.message = "Deep-space resupply complete. Bonus rocket secured.";
         } else if (state.score >= state.nextRocketAt) {
-          state.nextRocketAt += 5000;
+        state.nextRocketStep += 6000;
+        state.nextRocketAt += state.nextRocketStep;
         }
     }
 
@@ -953,7 +956,8 @@
       state.running = true;
       state.score = 0;
       state.balls = 3;
-      state.nextRocketAt = 5000;
+      state.nextRocketAt = 12000;
+      state.nextRocketStep = 12000;
       state.multiplier = 1;
       state.comboTimer = 0;
       state.canRestart = false;
@@ -2451,7 +2455,7 @@
       ctx.fillText("MISSION BRIEF", 150, 190);
       ctx.fillStyle = "rgba(235, 245, 255, 0.95)";
       ctx.font = "700 20px Segoe UI";
-      ctx.fillText("Operation: Totally Professional Pinball", 58, 236);
+      ctx.fillText("Operation: Totally Professional Rocket Deck", 58, 236);
 
       ctx.font = "600 16px Segoe UI";
       ctx.fillStyle = "rgba(200, 224, 255, 0.95)";
