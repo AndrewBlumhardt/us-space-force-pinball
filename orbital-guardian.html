@@ -473,7 +473,7 @@
       alienSaucers: []
     };
 
-    const quips = [
+    const movieQuips = [
       "I feel the need... the need for speed.",
       "Talk to me, Goose!",
       "You can be my wingman anytime.",
@@ -487,9 +487,6 @@
       "Houston, we have a problem.",
       "Failure is not an option.",
       "That is one small step for man.",
-      "We are go for launch.",
-      "All systems nominal.",
-      "Prepare for re-entry.",
       "Hold on, this is gonna get bumpy.",
       "We are not out of this yet.",
       "Punch it.",
@@ -503,14 +500,35 @@
       "I have got a bad feeling about this.",
       "It is a trap.",
       "You are gonna need a bigger ship.",
-      "On your left.",
+      "On your left."
+    ];
+
+    const ussfQuips = [
       "Semper Supra.",
       "Guardian One, keep this orbit spicy.",
-      "Space Force control says we definitely meant to do that."
+      "Space Force control says we definitely meant to do that.",
+      "We are go for launch.",
+      "All systems nominal.",
+      "Prepare for re-entry.",
+      "Mission assurance says that bounce was within tolerance.",
+      "Orbital warfare note: style points confirmed.",
+      "Delta patch energy is off the charts.",
+      "Counterspace check complete. Continue the chaos.",
+      "Telemetry is noisy, confidence is high.",
+      "Range control says keep it tight and keep it moving.",
+      "Threat response looks good from up here.",
+      "Space domain awareness updated with your nonsense.",
+      "Flight director approves this aggressively nominal run.",
+      "Ops brief says this is now a training vignette.",
+      "Guardian cadence maintained. Keep pressing.",
+      "Orbital lane discipline looks almost professional.",
+      "Control room consensus: send it.",
+      "Blue-suit banter level: optimal."
     ];
 
     function randomQuip() {
-      return quips[Math.floor(Math.random() * quips.length)];
+      const pool = Math.random() < 0.7 ? ussfQuips : movieQuips;
+      return pool[Math.floor(Math.random() * pool.length)];
     }
 
     const gameOverQuips = [
