@@ -329,7 +329,7 @@
       <ul class="stats">
         <li><span>Score</span><strong id="score">0</strong></li>
         <li><span>Best</span><strong id="best">0</strong></li>
-          <li><span>Rockets</span><strong id="balls">3</strong></li>
+          <li><span>Available</span><strong id="balls">2</strong></li>
         <li><span>Multiplier</span><strong id="multiplier">x1</strong></li>
       </ul>
 
@@ -2780,7 +2780,7 @@
     function updateHud() {
       scoreEl.textContent = String(state.score);
       bestEl.textContent = String(state.best);
-      ballsEl.textContent = String(state.balls);
+      ballsEl.textContent = String(Math.max(0, state.balls - rockets.length));
       multiplierEl.textContent = "x" + state.multiplier.toFixed(1).replace(/\.0$/, "");
       const now = performance.now();
       if (state.message !== hudMessage.pending) {
