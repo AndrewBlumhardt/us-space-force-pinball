@@ -623,6 +623,12 @@
       { x: 268, y: 548, r: 18, vx: 0.45, vy: 0.28, spin: 1.8, spinRate: 0.025, points: 260 }
     ];
 
+    const alienSaucers = [
+      { x: 118, y: 524, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66 },
+      { x: 424, y: 522, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62 },
+      { x: 270, y: 668, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58 }
+    ];
+
     const particles = [];
 
     function addParticle(p) {
@@ -751,6 +757,13 @@
         asteroid.x = tx(asteroid.x);
         asteroid.y = ty(asteroid.y);
         asteroid.r *= s;
+      }
+
+      for (const saucer of alienSaucers) {
+        saucer.x = tx(saucer.x);
+        saucer.y = ty(saucer.y);
+        saucer.rx *= s;
+        saucer.ry *= s;
       }
 
       launchFx.plumeX = tx(launchFx.plumeX);
@@ -1267,6 +1280,12 @@
       }
     }
 
+    function updateAlienSaucers() {
+      for (const saucer of alienSaucers) {
+        saucer.bob += saucer.speed;
+      }
+    }
+
     function updateParticles() {
       for (let i = particles.length - 1; i >= 0; i -= 1) {
         const p = particles[i];
@@ -1349,6 +1368,7 @@
       applySlingCollisions();
       applyGateCollisions();
       updateAsteroids();
+      updateAlienSaucers();
       applyAsteroidCollisions();
       applySpecialCoreCollision();
       applyAstronautFlybys();
@@ -1688,7 +1708,7 @@
     function drawFieldEasterEggs() {
       ctx.save();
       ctx.fillStyle = "rgba(174, 215, 255, 0.32)";
-      ctx.font = "700 10px Segoe UI";
+      ctx.font = "700 14px Segoe UI";
       ctx.fillText("VANDENBERG", 54, 286);
       ctx.fillText("PETERSON", 392, 286);
 
@@ -1740,7 +1760,7 @@
       ctx.arc(14, 18, 1.6, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.font = "700 8px Segoe UI";
+      ctx.font = "700 10px Segoe UI";
       ctx.fillText("MISSION 2026", -27, 42);
       ctx.fillText("CREW RETURN", -25, 52);
       ctx.restore();
@@ -1843,7 +1863,7 @@
         ctx.stroke();
 
         ctx.fillStyle = "rgba(236, 245, 255, 0.95)";
-        ctx.font = "800 10px Segoe UI";
+        ctx.font = "800 13px Segoe UI";
         ctx.fillText(bumper.label, bumper.x - ctx.measureText(bumper.label).width / 2, bumper.y + 3);
         ctx.restore();
       }
@@ -1894,6 +1914,47 @@
         ctx.beginPath();
         ctx.arc(asteroid.r * 0.26, asteroid.r * 0.18, asteroid.r * 0.12, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawAlienSaucers() {
+      for (const saucer of alienSaucers) {
+        const drift = Math.sin(saucer.bob) * saucer.drift;
+        const bobY = Math.cos(saucer.bob * 1.4) * 3.5;
+        ctx.save();
+        ctx.translate(saucer.x + drift, saucer.y + bobY);
+
+        const halo = ctx.createRadialGradient(0, 0, saucer.ry * 0.6, 0, 0, saucer.rx * 2);
+        halo.addColorStop(0, `rgba(112, 221, 255, ${0.2 + saucer.glow * 0.3})`);
+        halo.addColorStop(1, "rgba(112, 221, 255, 0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, saucer.rx * 1.85, saucer.ry * 1.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(120, 236, 255, 0.86)";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, saucer.rx, saucer.ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(206, 248, 255, 0.82)";
+        ctx.beginPath();
+        ctx.ellipse(0, -saucer.ry * 0.55, saucer.rx * 0.44, saucer.ry * 0.58, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(245, 255, 255, 0.75)";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, saucer.rx, saucer.ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255, 212, 103, 0.8)";
+        for (let i = -2; i <= 2; i += 1) {
+          ctx.beginPath();
+          ctx.arc(i * saucer.rx * 0.36, saucer.ry * 0.1, saucer.ry * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
       }
     }
@@ -2071,18 +2132,18 @@
     function drawTextAndMarkers() {
       ctx.save();
       const pulse = 0.45 + Math.sin(state.neonTick * 1.8) * 0.25;
-      ctx.font = "800 24px Segoe UI";
+      ctx.font = "800 34px Segoe UI";
       ctx.fillStyle = `rgba(235, 245, 255, ${0.76 + pulse * 0.25})`;
       ctx.shadowColor = "rgba(112, 221, 255, 0.65)";
       ctx.shadowBlur = 15;
       const titleText = "US SPACE FORCE";
       const titleX = (board.width - ctx.measureText(titleText).width) * 0.5;
-      ctx.fillText(titleText, titleX, 58);
-      ctx.font = "700 12px Segoe UI";
+      ctx.fillText(titleText, titleX, 76);
+      ctx.font = "700 18px Segoe UI";
       ctx.fillStyle = "rgba(112, 221, 255, 0.86)";
       const subtitleText = "SEMPER SUPRA";
       const subtitleX = (board.width - ctx.measureText(subtitleText).width) * 0.5;
-      ctx.fillText(subtitleText, subtitleX, 82);
+      ctx.fillText(subtitleText, subtitleX, 106);
       ctx.shadowBlur = 0;
 
       if (!state.running) {
@@ -2129,6 +2190,7 @@
       drawBumpers();
       drawBeacons();
       drawAsteroids();
+      drawAlienSaucers();
       drawSpecialCore();
       drawSlings();
       drawFlipper(flippers.left, "#2d79c8");
