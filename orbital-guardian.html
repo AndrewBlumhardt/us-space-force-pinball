@@ -68,7 +68,7 @@
       display: grid;
       grid-template-columns: minmax(240px, 290px) minmax(320px, 1fr);
       gap: 18px;
-      align-items: start;
+      align-items: stretch;
       padding: 16px;
       z-index: 1;
     }
@@ -345,12 +345,12 @@
   </main>
 
   <details class="dev-attrib" aria-label="Developer attribution">
-    <summary>About dev</summary>
+    <summary>About Dev</summary>
     <div class="dev-attrib-panel">
       <p class="dev-attrib-title">Developer Links</p>
       <div class="dev-attrib-links">
-        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub (placeholder)</a>
-        <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">LinkedIn (placeholder)</a>
+        <a href="https://github.com/AndrewBlumhardt/us-space-force-pinball" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/andrewblumhardt/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
       </div>
     </div>
   </details>
@@ -487,8 +487,8 @@
       { x: 135, y: 192, r: 29, points: 140, pulse: 0, label: "NOVA" },
       { x: 270, y: 152, r: 25, points: 180, pulse: 0, label: "DELTA" },
       { x: 405, y: 192, r: 29, points: 140, pulse: 0, label: "ORBIT" },
-      { x: 220, y: 406, r: 23, points: 220, pulse: 0, label: "SAT" },
-      { x: 319, y: 406, r: 23, points: 220, pulse: 0, label: "COM" }
+      { x: 200, y: 378, r: 23, points: 220, pulse: 0, label: "SAT" },
+      { x: 339, y: 378, r: 23, points: 220, pulse: 0, label: "COM" }
     ];
 
     const gates = [];
@@ -2205,9 +2205,11 @@
       ctx.shadowBlur = 0;
 
       if (!state.running) {
+        const goText = "GAME OVER";
+        ctx.font = "900 72px Segoe UI";
         ctx.fillStyle = "rgba(255, 109, 116, 0.96)";
-        ctx.font = "900 56px Segoe UI";
-        ctx.fillText("GAME OVER", 150, 476);
+        const goW = ctx.measureText(goText).width;
+        ctx.fillText(goText, (board.width - goW) * 0.5, 476);
       }
       ctx.restore();
     }
