@@ -514,8 +514,7 @@
 
     const rocketRules = {
       reloadDelay: 42,
-      maxStock: 4,
-      maxActiveLaunched: 3
+      maxStock: 4
     };
 
     const rocketStats = {
@@ -2940,13 +2939,6 @@
         return;
       }
       if (!state.running || !loadedRocket || loadedRocket.launched) {
-        return;
-      }
-      const launchedCount = getLaunchedRocketCount();
-      if (launchedCount >= rocketRules.maxActiveLaunched) {
-        state.message = "Flight deck is full - clear a rocket before launching another.";
-        state.charging = false;
-        state.launchPower = 0;
         return;
       }
       const normalized = state.launchPower / plunger.maxCharge;
