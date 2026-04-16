@@ -544,8 +544,8 @@
     ];
 
     const slings = [
-      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.72 },
-      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.72 }
+      { a: { x: 54, y: 786 }, b: { x: 198, y: 884 }, c: { x: 108, y: 900 }, power: 2.15 },
+      { a: { x: 460, y: 786 }, b: { x: 314, y: 884 }, c: { x: 432, y: 900 }, power: 2.15 }
     ];
 
     const flippers = {
@@ -1353,9 +1353,9 @@
       for (const sling of slings) {
         if (pointInTriangle(ball.x, ball.y, sling)) {
           const dir = sling.a.x < board.width / 2 ? 1 : -1;
-          ball.vx += 3.9 * dir;
-          ball.vy -= 5.2 * sling.power;
-          spawnBurst(ball.x, ball.y, "255,77,225", 10);
+          ball.vx += 5.0 * dir;
+          ball.vy -= 6.4 * sling.power;
+          spawnBurst(ball.x, ball.y, "255,77,225", 14);
           addScore(110);
           playTone("sawtooth", 250, 0.1, 0.03, 190);
           state.message = "Thruster sling engaged. " + quips[Math.floor(Math.random() * quips.length)];
