@@ -314,6 +314,28 @@
       color: #70ddff;
       border-bottom-color: rgba(112, 221, 255, 0.8);
     }
+
+    .perf-panel {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 4;
+      min-width: 220px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(112, 221, 255, 0.35);
+      background: rgba(4, 11, 29, 0.9);
+      color: rgba(206, 234, 255, 0.95);
+      font: 600 12px/1.35 Consolas, "Courier New", monospace;
+      white-space: pre;
+      pointer-events: none;
+      display: none;
+      box-shadow: 0 0 14px rgba(112, 221, 255, 0.18);
+    }
+
+    .perf-panel.on {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -373,6 +395,8 @@
     </div>
   </details>
 
+  <div id="perfPanel" class="perf-panel" aria-live="off"></div>
+
   <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
@@ -386,6 +410,7 @@
     const volumeEl = document.getElementById("volume");
     const volumeValueEl = document.getElementById("volumeValue");
     const muteButton = document.getElementById("muteButton");
+    const perfPanelEl = document.getElementById("perfPanel");
 
     const board = {
       width: canvas.width,
@@ -420,6 +445,20 @@
       lastSwapMs: performance.now(),
       minHoldMs: 3200
     };
+
+    const perfMonitor = {
+      enabled: new URLSearchParams(window.location.search).has("perf"),
+      frames: 0,
+      fps: 0,
+      hitches: 0,
+      longTaskMs: 0,
+      maxFrameMs: 0,
+      lastUiMs: performance.now()
+    };
+
+    if (perfMonitor.enabled) {
+      perfPanelEl.classList.add("on");
+    }
 
     let ball = null;
     let loadedRocket = null;
@@ -477,6 +516,15 @@
       asteroids: [],
       alienSaucers: []
     };
+
+    if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes && PerformanceObserver.supportedEntryTypes.includes("longtask")) {
+      const longTaskObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          perfMonitor.longTaskMs += entry.duration;
+        }
+      });
+      longTaskObserver.observe({ type: "longtask", buffered: true });
+    }
 
     const movieQuips = [
       "I feel the need... the need for speed.",
@@ -2794,6 +2842,55 @@
       statusTextEl.textContent = hudMessage.shown;
     }
 
+    function updatePerfPanel(now, frameMs) {
+      if (!perfMonitor.enabled) {
+        return;
+      }
+
+      const elapsedMs = now - perfMonitor.lastUiMs;
+      if (elapsedMs < 500) {
+        return;
+      }
+
+      perfMonitor.fps = (perfMonitor.frames * 1000) / elapsedMs;
+      const heapInfo = performance.memory
+        ? `${(performance.memory.usedJSHeapSize / 1048576).toFixed(1)} MB`
+        : "n/a";
+      const launchedCount = rockets.reduce((count, rocket) => count + (rocket.launched ? 1 : 0), 0);
+      const reserveCount = Math.max(0, state.balls - launchedCount);
+
+      perfPanelEl.textContent = [
+        "Performance Monitor (P)",
+        `FPS: ${perfMonitor.fps.toFixed(1)}`,
+        `Frame avg: ${perf.avgFrameMs.toFixed(2)} ms`,
+        `Frame last/max: ${frameMs.toFixed(2)} / ${perfMonitor.maxFrameMs.toFixed(2)} ms`,
+        `Hitches >33ms: ${perfMonitor.hitches}`,
+        `Long tasks: ${perfMonitor.longTaskMs.toFixed(1)} ms`,
+        `Particles: ${particles.length}/${perf.maxParticles}`,
+        `Rockets reserve/in-flight: ${reserveCount}/${launchedCount}`,
+        `Low effects: ${perf.lowEffects ? "on" : "off"}`,
+        `JS heap: ${heapInfo}`
+      ].join("\n");
+
+      perfMonitor.frames = 0;
+      perfMonitor.hitches = 0;
+      perfMonitor.longTaskMs = 0;
+      perfMonitor.maxFrameMs = 0;
+      perfMonitor.lastUiMs = now;
+    }
+
+    function togglePerfPanel() {
+      perfMonitor.enabled = !perfMonitor.enabled;
+      perfPanelEl.classList.toggle("on", perfMonitor.enabled);
+      if (perfMonitor.enabled) {
+        perfMonitor.frames = 0;
+        perfMonitor.hitches = 0;
+        perfMonitor.longTaskMs = 0;
+        perfMonitor.maxFrameMs = 0;
+        perfMonitor.lastUiMs = performance.now();
+      }
+    }
+
     function launchBall() {
       if (state.introActive) {
         state.introActive = false;
@@ -2815,6 +2912,13 @@
       const now = performance.now();
       const frameMs = now - perf.lastFrameMs;
       perf.lastFrameMs = now;
+      perfMonitor.frames += 1;
+      if (frameMs > 33) {
+        perfMonitor.hitches += 1;
+      }
+      if (frameMs > perfMonitor.maxFrameMs) {
+        perfMonitor.maxFrameMs = frameMs;
+      }
       perf.avgFrameMs = perf.avgFrameMs * 0.92 + frameMs * 0.08;
       if (perf.avgFrameMs > 22) {
         perf.slowFrames += 1;
@@ -2841,6 +2945,7 @@
       updatePhysics();
       render();
       updateHud();
+      updatePerfPanel(now, frameMs);
       animationFrameId = requestAnimationFrame(gameLoop);
     }
 
@@ -2865,6 +2970,9 @@
           state.charging = true;
           event.preventDefault();
         }
+      }
+      if (event.code === "KeyP" && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        togglePerfPanel();
       }
       if (event.code === "Enter" && (!state.running || state.canRestart)) {
         restartGame();
