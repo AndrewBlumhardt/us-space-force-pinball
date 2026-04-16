@@ -2754,9 +2754,7 @@
     function updateHud() {
       scoreEl.textContent = String(state.score);
       bestEl.textContent = String(state.best);
-      const launchedRockets = rockets.reduce((count, rocket) => count + (rocket.launched ? 1 : 0), 0);
-      const rocketsReady = Math.max(0, state.balls - launchedRockets);
-      ballsEl.textContent = String(rocketsReady);
+      ballsEl.textContent = String(state.balls);
       multiplierEl.textContent = "x" + state.multiplier.toFixed(1).replace(/\.0$/, "");
       const now = performance.now();
       if (state.message !== hudMessage.pending) {
