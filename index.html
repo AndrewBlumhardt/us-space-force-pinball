@@ -340,7 +340,7 @@
     </aside>
 
     <section class="board-wrap">
-      <canvas id="game" width="1008" height="1872" role="img" aria-label="Pinball board shaped like a spacecraft in flight"></canvas>
+      <canvas id="game" width="1008" height="2160" role="img" aria-label="Pinball board shaped like a spacecraft in flight"></canvas>
     </section>
   </main>
 
@@ -478,9 +478,9 @@
       y: 760,
       width: 20,
       height: 154,
-      minPower: 7.2,
-      maxPower: 24.6,
-      maxCharge: 28
+      minPower: 9.0,
+      maxPower: 28.0,
+      maxCharge: 32
     };
 
     const bumpers = [
@@ -499,13 +499,13 @@
     ];
 
     const slings = [
-      { a: { x: 86, y: 730 }, b: { x: 186, y: 790 }, c: { x: 86, y: 824 }, power: 1.24 },
-      { a: { x: 454, y: 730 }, b: { x: 354, y: 790 }, c: { x: 454, y: 824 }, power: 1.24 }
+      { a: { x: 28, y: 720 }, b: { x: 186, y: 790 }, c: { x: 112, y: 888 }, power: 1.24 },
+      { a: { x: 472, y: 720 }, b: { x: 354, y: 790 }, c: { x: 428, y: 888 }, power: 1.24 }
     ];
 
     const flippers = {
       left: {
-        pivot: { x: 198, y: 892 },
+        pivot: { x: 182, y: 892 },
         length: 60,
         width: 14,
         base: 0.34,
@@ -513,7 +513,7 @@
         current: 0.34
       },
       right: {
-        pivot: { x: 342, y: 892 },
+        pivot: { x: 358, y: 892 },
         length: 60,
         width: 14,
         base: Math.PI - 0.34,
@@ -546,7 +546,7 @@
     const upperFlippers = [
       {
         side: "left",
-        pivot: { x: 54, y: 398 },
+        pivot: { x: 80, y: 398 },
         length: 54,
         width: 11,
         base: 0.22,
@@ -555,7 +555,7 @@
       },
       {
         side: "right",
-        pivot: { x: 486, y: 398 },
+        pivot: { x: 460, y: 398 },
         length: 54,
         width: 11,
         base: Math.PI - 0.22,
@@ -657,7 +657,7 @@
       const sourceWidth = 560;
       const sourceHeight = 1000;
       const sx = 1.608;
-      const sy = 1.704;
+      const sy = 1.963;
       const s = (sx + sy) * 0.5;
       const coreLeft = 28;
       const coreRight = 486;
@@ -1398,7 +1398,6 @@
       ctx.shadowBlur = 18;
       ctx.font = "900 32px Segoe UI";
       ctx.fillStyle = "rgba(255, 77, 225, 0.3)";
-      ctx.fillText("NEON GUARDIAN", -245, -54);
       ctx.restore();
     }
 
@@ -1698,12 +1697,6 @@
       const textWidth = ctx.measureText(capeText).width;
       ctx.fillText(capeText, railMid - textWidth * 0.5, plunger.y + plunger.height + 26);
 
-      ctx.fillStyle = "rgba(255, 212, 103, 0.28)";
-      ctx.font = "700 9px Segoe UI";
-      ctx.fillText("CHARACTER", 46, 596);
-      ctx.fillText("COMMITMENT", 404, 596);
-      ctx.fillText("CONNECTION", 56, 614);
-      ctx.fillText("COURAGE", 416, 614);
       ctx.restore();
     }
 
