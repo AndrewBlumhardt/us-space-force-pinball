@@ -423,35 +423,33 @@
       minX: 80,
       maxX: 450,
       minY: 360,
-      maxY: 760
-    };
+      reinforceLaunchPower: 0.72,
 
     const perf = {
       maxParticles: 320,
       frameSkip: false,
       particleWriteIndex: 0
     };
-
-    const rocketRules = {
+      { x: 365, y: 334, r: 24, points: 240, pulse: 0, label: "COM", theme: "warm", kick: 1.26 },
       maxConcurrent: 3,
       reinforceDeployDelay: 132,
-      reinforceLaunchDelay: 18,
-      reinforceLaunchPower: 0.72,
+      { a: { x: 66, y: 808 }, b: { x: 182, y: 892 }, c: { x: 116, y: 888 }, power: 1.78 },
+      { a: { x: 448, y: 808 }, b: { x: 332, y: 892 }, c: { x: 424, y: 888 }, power: 1.78 }
       boostBumperKick: 1.78
     };
 
     const rocketStats = {
       radius: 10
-    };
-
-    const restartState = {
+          ball.vx += 4.8 * dir;
+          ball.vy -= 6.0 * sling.power;
+          spawnBurst(ball.x, ball.y, "255,77,225", 16);
       asteroids: [],
       alienSaucers: []
     };
 
     const quips = [
       "Astronaut on coffee break - try not to boop the helmet.",
-      "Neon mode engaged. Sunglasses recommended.",
+        <div><b>Targets:</b> NOVA, DELTA, ORBIT, SAT, COM.</div>
       "Ground control says this is totally within budget.",
       "Flight deck cat says this is a purr-fect trajectory.",
       "Mission note: less screaming, more rocket precision.",
@@ -951,15 +949,12 @@
 
       const activeTarget = Math.min(rocketRules.maxConcurrent, state.balls);
       if (loadedRocket && !loadedRocket.launched) {
+        loadedRocket.x = launcher.holdX;
+        loadedRocket.y = launcher.holdY;
+        loadedRocket.prevX = loadedRocket.x;
+        loadedRocket.prevY = loadedRocket.y;
         if (loadedRocket.autoLaunchTimer > 0) {
-          loadedRocket.x = launcher.holdX;
-          loadedRocket.y = launcher.holdY;
-          loadedRocket.prevX = loadedRocket.x;
-          loadedRocket.prevY = loadedRocket.y;
           loadedRocket.autoLaunchTimer -= 1;
-          if (loadedRocket.autoLaunchTimer <= 0) {
-            launchRocket(loadedRocket, loadedRocket.autoLaunchPower);
-          }
         }
         return;
       }
@@ -978,8 +973,8 @@
       if (reinforceTimer > 0) {
         reinforceTimer -= 1;
         if (reinforceTimer === 0) {
-          spawnLoadedRocket(rocketRules.reinforceLaunchDelay, rocketRules.reinforceLaunchPower);
-          state.message = "Reserve rocket rolling into the launch rail.";
+          spawnLoadedRocket();
+          state.message = "Reserve rocket ready - press Space to launch.";
         }
       }
     }
