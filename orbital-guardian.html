@@ -311,7 +311,7 @@
       <ul class="stats">
         <li><span>Score</span><strong id="score">0</strong></li>
         <li><span>Best</span><strong id="best">0</strong></li>
-        <li><span>Balls</span><strong id="balls">3</strong></li>
+          <li><span>Rockets</span><strong id="balls">3</strong></li>
         <li><span>Multiplier</span><strong id="multiplier">x1</strong></li>
       </ul>
 
@@ -336,7 +336,7 @@
         <div><b>Targets:</b> NOVA (deep space), DELTA (Space Force symbol), ORBIT (orbital control), SAT (satellite systems), COM (communications).</div>
       </section>
 
-      <div class="status" id="status">Hold Space to charge the launch rail.</div>
+      <div class="status" id="status">Hold Space to charge the launch rail for rocket deployment.</div>
     </aside>
 
     <section class="board-wrap">
@@ -381,6 +381,7 @@
       score: 0,
       best: Number(localStorage.getItem("orbitalGuardianBest") || 0),
       balls: 3,
+      nextRocketAt: 5000,
       multiplier: 1,
       comboTimer: 0,
       launchPower: 0,
@@ -390,7 +391,18 @@
       canRestart: false,
       neonTick: 0,
       introActive: false,
-      message: "Hold Space to charge the launch rail."
+      message: "Hold Space to charge the launch rail for rocket deployment."
+    };
+
+    // Game-over animation state - reused each game end.
+    const gameOverAnim = {
+      active: false,
+      tick: 0,           // frames since game end
+      shakeX: 0,
+      shakeY: 0,
+      astronautY: 0,     // tumbling astronaut y position
+      astronautSpin: 0,
+      blinkOn: true
     };
 
     const boardArt = {
@@ -593,8 +605,8 @@
       { x: 78, y: 588, scale: 1.2, wave: 0.4, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "standard" },
       { x: 462, y: 596, scale: 1.104, wave: 2.1, radius: 45.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" },
       { x: 270, y: 748, scale: 0.936, wave: 1.1, radius: 40.8, spin: 0, glow: 0, cooldown: 0, suit: "pink" },
-      { x: 206, y: 444, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "gold" },
-      { x: 356, y: 652, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "blue" }
+      { x: 170, y: 444, scale: 0.84, wave: 0.9, radius: 38.4, spin: 0, glow: 0, cooldown: 0, suit: "green" },
+      { x: 382, y: 552, scale: 0.792, wave: 2.8, radius: 33.6, spin: 0, glow: 0, cooldown: 0, suit: "orange" }
     ];
 
     const specialCore = {
@@ -627,9 +639,9 @@
     ];
 
     const alienSaucers = [
-      { x: 110, y: 486, homeX: 110, homeY: 486, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0 },
-      { x: 430, y: 484, homeX: 430, homeY: 484, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0 },
-      { x: 270, y: 620, homeX: 270, homeY: 620, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0 }
+      { x: 110, y: 486, homeX: 110, homeY: 486, vx: 0.48, vy: 0.18, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 0.8, drift: 1.05, speed: 0.018, glow: 0.66, hit: 0, cooldown: 0, color: "120, 236, 255" },
+      { x: 430, y: 484, homeX: 430, homeY: 484, vx: -0.44, vy: 0.16, roamX: 28, roamY: 18, rx: 24, ry: 9, bob: 2.4, drift: 1.1, speed: 0.021, glow: 0.62, hit: 0, cooldown: 0, color: "200, 130, 255" },
+      { x: 270, y: 620, homeX: 270, homeY: 620, vx: 0.34, vy: -0.2, roamX: 34, roamY: 20, rx: 28, ry: 10, bob: 1.7, drift: 0.9, speed: 0.016, glow: 0.58, hit: 0, cooldown: 0, color: "130, 255, 180" }
     ];
 
     const particles = [];
@@ -815,7 +827,7 @@
       state.charging = false;
       state.multiplier = 1;
       state.comboTimer = 0;
-      state.message = "Charge launch rail for deployment.";
+      state.message = "Charge launch rail for rocket deployment.";
     }
 
     function ensureAudio() {
@@ -900,6 +912,16 @@
       if (state.multiplier < 5) {
         state.multiplier = Math.min(5, Number((state.multiplier + 0.1).toFixed(1)));
       }
+        if (state.score >= state.nextRocketAt && state.balls < 5) {
+          state.balls += 1;
+          state.nextRocketAt += 5000;
+          spawnBurst(board.width * 0.5, board.height * 0.5, "255,212,103", 28);
+          playTone("sine", 880, 0.18, 0.06, 320);
+          playTone("sine", 1100, 0.14, 0.05, 220);
+          state.message = "Orbital resupply complete. Bonus rocket docked.";
+        } else if (state.score >= state.nextRocketAt) {
+          state.nextRocketAt += 5000;
+        }
     }
 
     function loseBall() {
@@ -908,11 +930,20 @@
       if (state.balls <= 0) {
         state.running = false;
         state.canRestart = true;
-        state.message = "Flight lost. Press Enter to redeploy.";
+        state.message = "Rockets expended. Press Enter to redeploy.";
         if (state.score > state.best) {
           state.best = state.score;
           localStorage.setItem("orbitalGuardianBest", String(state.best));
         }
+        // Kick off game-over animation.
+        gameOverAnim.active = true;
+        gameOverAnim.tick = 0;
+        gameOverAnim.astronautY = -80;
+        gameOverAnim.astronautSpin = 0;
+        gameOverAnim.blinkOn = true;
+        // Big entry burst at board center.
+        spawnBurst(board.width * 0.5, board.height * 0.38, "255,109,116", 40);
+        spawnBurst(board.width * 0.5, board.height * 0.38, "255,212,103", 24);
       } else {
         resetBall();
       }
@@ -922,14 +953,17 @@
       state.running = true;
       state.score = 0;
       state.balls = 3;
+      state.nextRocketAt = 5000;
       state.multiplier = 1;
       state.comboTimer = 0;
       state.canRestart = false;
       state.introActive = false;
-      state.message = "Hold Space to charge the launch rail.";
+      state.message = "Hold Space to charge the launch rail for rocket deployment.";
       state.leftPressed = false;
       state.rightPressed = false;
       state.charging = false;
+      gameOverAnim.active = false;
+      gameOverAnim.tick = 0;
       particles.length = 0;
       resetBall();
     }
@@ -1654,7 +1688,9 @@
         standard: "rgba(255, 77, 225, 0.9)",
         blue: "rgba(112, 221, 255, 0.92)",
         gold: "rgba(255, 212, 103, 0.9)",
-        pink: "rgba(255, 138, 228, 0.92)"
+        pink: "rgba(255, 138, 228, 0.92)",
+        green: "rgba(112, 255, 178, 0.92)",
+        orange: "rgba(255, 160, 64, 0.92)"
       };
       ctx.save();
       ctx.translate(x, y + Math.sin(state.neonTick + wave) * 5);
@@ -2021,19 +2057,20 @@
       for (const saucer of alienSaucers) {
         const drift = Math.sin(saucer.bob) * saucer.drift;
         const bobY = Math.cos(saucer.bob * 1.4) * 3.5;
+        const saucerColor = saucer.color || "120, 236, 255";
         ctx.save();
         ctx.translate(saucer.x + drift, saucer.y + bobY);
         ctx.rotate(Math.sin(saucer.bob * 0.7) * 0.08 + saucer.hit * 0.18);
 
         const halo = ctx.createRadialGradient(0, 0, saucer.ry * 0.6, 0, 0, saucer.rx * 2);
-        halo.addColorStop(0, `rgba(112, 221, 255, ${0.2 + saucer.glow * 0.3 + saucer.hit * 0.2})`);
-        halo.addColorStop(1, "rgba(112, 221, 255, 0)");
+        halo.addColorStop(0, `rgba(${saucerColor}, ${0.2 + saucer.glow * 0.3 + saucer.hit * 0.2})`);
+        halo.addColorStop(1, `rgba(${saucerColor}, 0)`);
         ctx.fillStyle = halo;
         ctx.beginPath();
         ctx.ellipse(0, 0, saucer.rx * 1.85, saucer.ry * 1.2, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = saucer.hit > 0.2 ? "rgba(255, 190, 126, 0.92)" : "rgba(120, 236, 255, 0.86)";
+        ctx.fillStyle = saucer.hit > 0.2 ? "rgba(255, 190, 126, 0.92)" : `rgba(${saucerColor}, 0.86)`;
         ctx.beginPath();
         ctx.ellipse(0, 0, saucer.rx, saucer.ry, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -2259,6 +2296,91 @@
       ctx.restore();
     }
 
+    function drawGameOverOverlay() {
+      if (!gameOverAnim.active) return;
+      gameOverAnim.tick += 1;
+      const t = gameOverAnim.tick;
+
+      // Screen shake for first 18 frames.
+      const shakeMag = t < 18 ? (18 - t) * 2.8 : 0;
+      gameOverAnim.shakeX = (Math.random() - 0.5) * shakeMag;
+      gameOverAnim.shakeY = (Math.random() - 0.5) * shakeMag;
+
+      ctx.save();
+      ctx.translate(gameOverAnim.shakeX, gameOverAnim.shakeY);
+
+      const cx = board.width * 0.5;
+      const panelTop = board.height * 0.24;
+      const panelH = board.height * 0.46;
+
+      // Scrim.
+      const fadeIn = Math.min(1, t / 28);
+      ctx.fillStyle = `rgba(2, 4, 16, ${0.82 * fadeIn})`;
+      ctx.fillRect(cx - 290, panelTop, 580, panelH);
+
+      // Scorch border.
+      ctx.strokeStyle = `rgba(255, 109, 116, ${0.7 * fadeIn})`;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "rgba(255, 80, 80, 0.9)";
+      ctx.shadowBlur = 18;
+      ctx.strokeRect(cx - 290, panelTop, 580, panelH);
+      ctx.shadowBlur = 0;
+
+      // Tumbling astronaut drifts down from top of panel.
+      if (t > 10) {
+        gameOverAnim.astronautY = Math.min(panelTop + panelH * 0.28,
+          gameOverAnim.astronautY + (t < 50 ? 4.5 : 0.4));
+        gameOverAnim.astronautSpin += 0.07;
+        ctx.save();
+        ctx.translate(cx + Math.sin(t * 0.08) * 34, gameOverAnim.astronautY);
+        ctx.rotate(gameOverAnim.astronautSpin);
+        // Draw directly without position - astronaut helper uses translate.
+        drawAstronaut({ x: 0, y: 0, scale: 1.25, wave: gameOverAnim.astronautSpin * 2, spin: gameOverAnim.astronautSpin, glow: 0.7 });
+        ctx.restore();
+      }
+
+      // "GAME OVER" with flicker.
+      if (t > 20) {
+        const textAlpha = Math.min(1, (t - 20) / 14);
+        const flicker = t < 36 ? (Math.random() > 0.3 ? 1 : 0.4) : 1;
+        ctx.font = "900 78px Segoe UI";
+        ctx.shadowColor = "rgba(255, 60, 80, 0.95)";
+        ctx.shadowBlur = 28 + Math.sin(t * 0.18) * 10;
+        ctx.fillStyle = `rgba(255, 109, 116, ${textAlpha * flicker})`;
+        const goW = ctx.measureText("GAME OVER").width;
+        ctx.fillText("GAME OVER", cx - goW * 0.5, panelTop + panelH * 0.52);
+        ctx.shadowBlur = 0;
+      }
+
+      // Final score.
+      if (t > 38) {
+        const scoreAlpha = Math.min(1, (t - 38) / 16);
+        ctx.font = "700 26px Segoe UI";
+        ctx.fillStyle = `rgba(255, 212, 103, ${scoreAlpha})`;
+        const scoreLabel = `Final Score: ${state.score}`;
+        ctx.fillText(scoreLabel, cx - ctx.measureText(scoreLabel).width * 0.5, panelTop + panelH * 0.66);
+        if (state.score >= state.best && state.score > 0) {
+          ctx.font = "800 20px Segoe UI";
+          ctx.fillStyle = `rgba(112, 221, 255, ${scoreAlpha})`;
+          const newBest = "- NEW BEST -";
+          ctx.fillText(newBest, cx - ctx.measureText(newBest).width * 0.5, panelTop + panelH * 0.74);
+        }
+      }
+
+      // Blinking restart prompt.
+      if (t > 52) {
+        if (t % 42 === 0) gameOverAnim.blinkOn = !gameOverAnim.blinkOn;
+        if (gameOverAnim.blinkOn) {
+          ctx.font = "600 19px Segoe UI";
+          ctx.fillStyle = "rgba(200, 230, 255, 0.88)";
+          const prompt = "Press Enter to redeploy";
+          ctx.fillText(prompt, cx - ctx.measureText(prompt).width * 0.5, panelTop + panelH * 0.88);
+        }
+      }
+
+      ctx.restore();
+    }
+
     function drawBoardArt() {
       ctx.save();
       ctx.translate(boardArt.centerX, boardArt.centerY);
@@ -2310,6 +2432,7 @@
       drawBall();
       drawParticles();
       drawTextAndMarkers();
+        drawGameOverOverlay();
       if (state.introActive) {
         drawIntroOverlay();
       }
