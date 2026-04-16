@@ -544,8 +544,8 @@
     ];
 
     const slings = [
-      { a: { x: 54, y: 786 }, b: { x: 198, y: 884 }, c: { x: 108, y: 900 }, power: 2.15 },
-      { a: { x: 460, y: 786 }, b: { x: 314, y: 884 }, c: { x: 432, y: 900 }, power: 2.15 }
+      { a: { x: 52, y: 780 }, b: { x: 168, y: 878 }, c: { x: 106, y: 904 }, power: 2.25 },
+      { a: { x: 462, y: 780 }, b: { x: 372, y: 878 }, c: { x: 434, y: 904 }, power: 2.25 }
     ];
 
     const flippers = {
@@ -553,6 +553,7 @@
         pivot: { x: 190, y: 946 },
         length: 60,
         width: 14,
+        power: 1.78,
         base: 0.34,
         lift: -1.12,
         current: 0.34
@@ -561,6 +562,7 @@
         pivot: { x: 350, y: 946 },
         length: 60,
         width: 14,
+        power: 1.78,
         base: Math.PI - 0.34,
         lift: Math.PI + 1.12,
         current: Math.PI - 0.34
@@ -1282,8 +1284,9 @@
         ball.y += ny * push;
         reflectAgainstNormal(nx, ny, 0.98);
 
-        const tangentBoost = boosted ? 1.95 : 1.06;
-        const liftBoost = boosted ? 2.95 : 1.0;
+        const flipperPower = flipper.power || 1;
+        const tangentBoost = (boosted ? 1.95 : 1.06) * flipperPower;
+        const liftBoost = (boosted ? 2.95 : 1.0) * flipperPower;
         ball.vx += (x2 - x1) * 0.003 * tangentBoost;
         ball.vy += (y2 - y1) * 0.003 * tangentBoost - liftBoost;
       }
