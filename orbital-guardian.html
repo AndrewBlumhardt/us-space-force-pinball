@@ -424,7 +424,13 @@
 
     const perf = {
       maxParticles: 320,
-      frameSkip: false
+      frameSkip: false,
+      particleWriteIndex: 0
+    };
+
+    const restartState = {
+      asteroids: [],
+      alienSaucers: []
     };
 
     const quips = [
@@ -649,9 +655,68 @@
 
     function addParticle(p) {
       if (particles.length >= perf.maxParticles) {
-        particles.shift();
+        particles[perf.particleWriteIndex] = p;
+        perf.particleWriteIndex = (perf.particleWriteIndex + 1) % perf.maxParticles;
+        return;
       }
       particles.push(p);
+    }
+
+    function cloneAsteroid(asteroid) {
+      return {
+        x: asteroid.x,
+        y: asteroid.y,
+        r: asteroid.r,
+        vx: asteroid.vx,
+        vy: asteroid.vy,
+        spin: asteroid.spin,
+        spinRate: asteroid.spinRate,
+        points: asteroid.points
+      };
+    }
+
+    function cloneSaucer(saucer) {
+      return {
+        x: saucer.x,
+        y: saucer.y,
+        homeX: saucer.homeX,
+        homeY: saucer.homeY,
+        vx: saucer.vx,
+        vy: saucer.vy,
+        roamX: saucer.roamX,
+        roamY: saucer.roamY,
+        rx: saucer.rx,
+        ry: saucer.ry,
+        bob: saucer.bob,
+        drift: saucer.drift,
+        speed: saucer.speed,
+        glow: saucer.glow,
+        hit: 0,
+        cooldown: 0,
+        color: saucer.color
+      };
+    }
+
+    function captureRestartState() {
+      restartState.asteroids = asteroids.map(cloneAsteroid);
+      restartState.alienSaucers = alienSaucers.map(cloneSaucer);
+    }
+
+    function restoreDynamicActors() {
+      asteroids.length = 0;
+      for (const asteroid of restartState.asteroids) {
+        asteroids.push(cloneAsteroid(asteroid));
+      }
+
+      alienSaucers.length = 0;
+      for (const saucer of restartState.alienSaucers) {
+        alienSaucers.push(cloneSaucer(saucer));
+      }
+
+      particles.length = 0;
+      perf.particleWriteIndex = 0;
+      launchFx.timer = 0;
+      launchFx.strength = 0;
     }
 
     function randomBetween(min, max) {
@@ -968,7 +1033,7 @@
       state.charging = false;
       gameOverAnim.active = false;
       gameOverAnim.tick = 0;
-      particles.length = 0;
+      restoreDynamicActors();
       resetBall();
     }
 
@@ -2616,6 +2681,7 @@
     });
 
     applyBoardScale();
+    captureRestartState();
     resetBall();
     gameLoop();
   </script>
