@@ -1155,7 +1155,7 @@
         state.running = false;
         state.canRestart = true;
         const closingQuip = gameOverQuips[Math.floor(Math.random() * gameOverQuips.length)];
-        state.message = `${closingQuip} Press Enter to redeploy.`;
+        state.message = `${closingQuip} Press Enter or tap to redeploy.`;
         if (state.score > state.best) {
           state.best = state.score;
           localStorage.setItem("orbitalGuardianBest", String(state.best));
@@ -1178,11 +1178,19 @@
       }
     }
 
+    function resumeAudioContext() {
+      if (!audio.ctx || audio.ctx.state === "running") {
+        return;
+      }
+      // iOS/Safari can keep contexts suspended until a trusted gesture resumes it.
+      audio.ctx.resume().catch(() => {
+        // Ignore transient resume failures; next gesture will retry.
+      });
+    }
+
     function ensureAudio() {
       if (audio.enabled) {
-        if (audio.ctx && audio.ctx.state === "suspended") {
-          audio.ctx.resume();
-        }
+        resumeAudioContext();
         applyAudioVolume();
         return;
       }
@@ -1197,6 +1205,7 @@
       audio.master.connect(audio.ctx.destination);
       applyAudioVolume();
       audio.enabled = true;
+      resumeAudioContext();
     }
 
     function applyAudioVolume() {
@@ -2738,7 +2747,7 @@
         if (gameOverAnim.blinkOn) {
           ctx.font = "600 19px Segoe UI";
           ctx.fillStyle = "rgba(200, 230, 255, 0.88)";
-          const prompt = "Press Enter to redeploy";
+          const prompt = "Press Enter or tap to redeploy";
           ctx.fillText(prompt, cx - ctx.measureText(prompt).width * 0.5, panelTop + panelH * 0.88);
         }
       }
@@ -2996,6 +3005,20 @@
       animationFrameId = requestAnimationFrame(gameLoop);
     }
 
+    function tryUnlockAudioFromGesture() {
+      ensureAudio();
+      resumeAudioContext();
+      if (audio.ctx && audio.ctx.state === "running") {
+        window.removeEventListener("pointerdown", tryUnlockAudioFromGesture);
+        window.removeEventListener("touchstart", tryUnlockAudioFromGesture);
+        window.removeEventListener("click", tryUnlockAudioFromGesture);
+      }
+    }
+
+    window.addEventListener("pointerdown", tryUnlockAudioFromGesture, { passive: true });
+    window.addEventListener("touchstart", tryUnlockAudioFromGesture, { passive: true });
+    window.addEventListener("click", tryUnlockAudioFromGesture, { passive: true });
+
     document.addEventListener("keydown", (event) => {
       if (event.repeat) {
         return;
@@ -3070,10 +3093,16 @@
 
     canvas.addEventListener("pointerdown", (event) => {
       ensureAudio();
+      resumeAudioContext();
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
 
       if (state.introActive) {
+        restartGame();
+        return;
+      }
+
+      if (!state.running || state.canRestart) {
         restartGame();
         return;
       }
