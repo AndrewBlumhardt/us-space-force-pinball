@@ -226,6 +226,7 @@
       max-height: 90vh;
       height: auto;
       display: block;
+      touch-action: none;
       border-radius: 16px;
       background:
         radial-gradient(circle at 10% 25%, rgba(255, 77, 225, 0.12), transparent 30%),
@@ -3037,28 +3038,71 @@
       }
     });
 
+    // Multi-touch pointer tracking: maps pointerId -> 'left' | 'right' | 'launch'
+    const touchRoles = new Map();
+
+    function toGameCoords(event) {
+      const rect = canvas.getBoundingClientRect();
+      const gameX = (event.clientX - rect.left) * (canvas.width / rect.width);
+      const gameY = (event.clientY - rect.top) * (canvas.height / rect.height);
+      return { gameX, gameY };
+    }
+
+    function isLaunchZone(gameX, gameY) {
+      // Tap-and-hold zone around the plunger/launcher area (right side, lower-middle of board)
+      return (
+        gameX > canvas.width * 0.38 &&
+        gameY > launcher.topExitY &&
+        gameY < launcher.holdY + 280
+      );
+    }
+
+    function recomputeFlipperState() {
+      let left = false;
+      let right = false;
+      for (const role of touchRoles.values()) {
+        if (role === "left") { left = true; }
+        if (role === "right") { right = true; }
+      }
+      state.leftPressed = left;
+      state.rightPressed = right;
+    }
+
     canvas.addEventListener("pointerdown", (event) => {
       ensureAudio();
+      event.preventDefault();
+      canvas.setPointerCapture(event.pointerId);
+
       if (state.introActive) {
-        state.message = "Press Space to launch briefing.";
+        restartGame();
         return;
       }
-      if (loadedRocket && !loadedRocket.launched && state.running) {
-        state.message = "Launch is keyboard-only. Hold and release Space.";
+
+      const { gameX, gameY } = toGameCoords(event);
+
+      if (isLaunchZone(gameX, gameY) && loadedRocket && !loadedRocket.launched && state.running) {
+        touchRoles.set(event.pointerId, "launch");
+        state.charging = true;
         return;
       }
-      if (event.offsetX < canvas.width * 0.5) {
-        state.leftPressed = true;
-      } else {
-        state.rightPressed = true;
-      }
+
+      const role = gameX < canvas.width * 0.5 ? "left" : "right";
+      touchRoles.set(event.pointerId, role);
+      recomputeFlipperState();
     });
 
-    canvas.addEventListener("pointerup", () => {
-      state.leftPressed = false;
-      state.rightPressed = false;
-      state.charging = false;
-    });
+    function handlePointerEnd(event) {
+      const role = touchRoles.get(event.pointerId);
+      touchRoles.delete(event.pointerId);
+      if (role === "launch") {
+        launchBall();
+      } else {
+        recomputeFlipperState();
+      }
+    }
+
+    canvas.addEventListener("pointerup", handlePointerEnd);
+    canvas.addEventListener("pointercancel", handlePointerEnd);
 
     volumeEl.addEventListener("input", (event) => {
       audio.volume = Number(event.target.value) / 100;
