@@ -2826,6 +2826,13 @@
       if (state.introActive) {
         drawIntroOverlay();
       }
+
+      ctx.save();
+      ctx.font = "11px monospace";
+      ctx.fillStyle = "rgba(180, 220, 255, 0.28)";
+      ctx.textAlign = "left";
+      ctx.fillText("v1.0.0", 10, board.height - 10);
+      ctx.restore();
     }
 
     function drawIntroOverlay() {
