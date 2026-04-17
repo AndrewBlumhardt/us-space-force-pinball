@@ -1,11 +1,11 @@
-# 🚀 US Space Force Pinball
+# 🚀 US Space Force Rocketball
 
-A browser-based neon pinball game inspired by US Space Force visuals and mission themes.
+A browser-based neon Rocketball game inspired by US Space Force visuals and mission themes.
 
 Launch your rocket, chain combo multipliers, dodge drifting asteroids, and earn resupply drops to keep the mission alive. Six flippers, dynamic space events, and a mission-control banter system keep each run fresh.
 
 <p align="center">
-  <img src="images/pinball.png" alt="Orbital Guardian gameplay screenshot" width="75%">
+  <img src="images/Rocketball.png" alt="Orbital Guardian gameplay screenshot" width="75%">
 </p>
 
 ## ▶️ Play Live
@@ -86,7 +86,7 @@ The game is intentionally single-file and browser-native - no build toolchain, n
 Optional local server:
 
 ```powershell
-cd us-space-force-pinball
+cd us-space-force-Rocketball
 python -m http.server 8080
 ```
 
