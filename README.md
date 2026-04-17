@@ -5,7 +5,7 @@ A browser-based neon Rocketball game inspired by US Space Force visuals and miss
 Launch your rocket, chain combo multipliers, dodge drifting asteroids, and earn resupply drops to keep the mission alive. Six flippers, dynamic space events, and a mission-control banter system keep each run fresh.
 
 <p align="center">
-  <img src="images/Rocketball.png" alt="Orbital Guardian gameplay screenshot" width="75%">
+  <img src="images/pinball.png" alt="Orbital Guardian gameplay screenshot" width="75%">
 </p>
 
 ## ▶️ Play Live
